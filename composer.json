@@ -1,6 +1,6 @@
 {
   "name": "greenarmor/bamboo",
-  "description": "Bamboo \u2014 a fast PHP framework on OpenSwoole with a distinctive CLI and unique footprint.",
+  "description": "BAMBOO (Bootstrapable Application Microframework Built for OpenSwoole Operations).",
   "type": "project",
   "license": "MIT",
   "keywords": [
