@@ -11,6 +11,10 @@ php bin/bamboo http.serve
 ```
 Open: http://127.0.0.1:9501
 
+## Installation on PHP 8.4
+
+Need the full PHP 8.4 + OpenSwoole toolchain? Follow the [step-by-step installation and configuration guide](docs/Install-Bamboo-PHP84.md) for detailed package lists, environment setup, and service configuration tips.
+
 ## Try the client
 ```bash
 php bin/bamboo client.call --url=https://httpbin.org/get
