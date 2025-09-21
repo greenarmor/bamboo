@@ -124,8 +124,7 @@ Bamboo's identity while incrementally expanding capabilities.
 
 ### Guiding principles
 
-* Preserve the dot-notation CLI identity—no Artisan-style names or
-  Laravel-like folder structures.
+* Preserve the dot-notation CLI.
 * Keep the core small and fast: HTTP server, router, dependency
   injection, configuration, and logging stay in the core; everything else
   ships as opt-in modules.
