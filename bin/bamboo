@@ -1,4 +1,4 @@
-#!/usr/bin/env php8.3
+#!/usr/bin/env php8.4
 <?php
 $bootstrap = __DIR__ . '/../bootstrap/app.php';
 $app = require $bootstrap;

@@ -110,8 +110,8 @@ container. Server tuning parameters such as CPU-aware worker counts, task
 workers, and static file handling live in `etc/server.php`, maintaining
 the prescribed `etc/` hierarchy for runtime settings. The
 `docs/OpenSwoole-Compat-and-Fixes.md` guide documents compatibility fixes
-and setup steps required to run Bamboo v0.2 on PHP 8.3 with OpenSwoole
-25.x.
+and setup steps required to run Bamboo v0.2 on PHP 8.4 with OpenSwoole
+25.x rebuilt against the newer PHP runtime.
 
 ## Roadmap
 
@@ -140,7 +140,7 @@ Bamboo's identity while incrementally expanding capabilities.
 * **v0.2 “Stalk” (DX & stability)** – Error handler with
   `application/problem+json`, config validation on boot, structured logs
   with per-request correlation IDs, hot-reload improvements, and CI
-  coverage (PHP 8.2/8.3, lint, type checks, tests).
+  coverage (PHP 8.2/8.4, lint, type checks, tests).
 * **v0.3 “Grove” (modules & extensibility)** – Middleware pipeline with
   groups, a simple job handler interface mapped from configuration, a
   `Bamboo\Module\ModuleInterface` for registering commands/routes/

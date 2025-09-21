@@ -8,7 +8,7 @@ use Http\Adapter\Guzzle7\Client as GuzzlePsr18;
 class Client {
   public function __construct(private Application $app) {}
 
-  public function for(string $service = null): Psr18Client {
+  public function for(?string $service = null): Psr18Client {
     $cfg = $this->app->config('http');
     $opts = $cfg['default'] ?? [];
     if ($service && isset($cfg['services'][$service])) {
