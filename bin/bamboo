@@ -1,0 +1,6 @@
+#!/usr/bin/env php8.3
+<?php
+$bootstrap = __DIR__ . '/../bootstrap/app.php';
+$app = require $bootstrap;
+$kernel = new Bamboo\Console\Kernel($app);
+exit($kernel->run($argv));

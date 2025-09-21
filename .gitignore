@@ -1,0 +1,8 @@
+/vendor/
+/var/cache/*
+/var/log/*
+.env
+.idea/
+.vscode/
+.DS_Store
+composer.lock
