@@ -1,4 +1,4 @@
-# Bamboo v0.2 — OpenSwoole Framework
+# BAMBOO (Bootstrapable Application Microframework Built for OpenSwoole Operations)
 
 Distinct CLI, clean footprint (`etc/`, `var/`), and a **Client API layer** (PSR-18 HTTP client with retries + concurrency).
 
