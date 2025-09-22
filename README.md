@@ -1,5 +1,5 @@
 # BAMBOO
-**Bootstrapable Application Microframework Built for OpenSwoole Operations**
+## Bootstrapable Application Microframework Built for OpenSwoole Operations
 
 A lightweight, high-performance PHP microframework powered by OpenSwoole.  
 Designed for developers who want the speed of async I/O with the simplicity of Express.js.
