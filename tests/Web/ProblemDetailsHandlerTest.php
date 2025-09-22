@@ -48,4 +48,19 @@ class ProblemDetailsHandlerTest extends TestCase {
     $this->assertIsArray($data);
     $this->assertSame('abc-123', $data['correlationId']);
   }
+
+  public function testHandlesInvalidUtf8InExceptionMessage(): void {
+    $handler = new ProblemDetailsHandler(false);
+    $invalidMessage = "Bad byte \xB1";
+    $throwable = new RuntimeException($invalidMessage);
+    $response = $handler->handle($throwable, new ServerRequest('GET', '/oops'));
+
+    $payload = (string)$response->getBody();
+    $data = json_decode($payload, true);
+
+    $this->assertSame(JSON_ERROR_NONE, json_last_error());
+    $this->assertIsArray($data);
+    $this->assertSame('An unexpected error occurred.', $data['detail']);
+    $this->assertSame(500, $data['status']);
+  }
 }

@@ -1,6 +1,7 @@
 <?php
 namespace Bamboo\Web;
 
+use JsonException;
 use Nyholm\Psr7\Response;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
@@ -31,10 +32,37 @@ class ProblemDetailsHandler {
       ];
     }
 
+    $flags = JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR;
+
+    try {
+      $body = json_encode($problem, $flags);
+    } catch (JsonException $e) {
+      $sanitizedProblem = $problem;
+      $sanitizedProblem['detail'] = 'An unexpected error occurred.';
+
+      if (isset($sanitizedProblem['debug'])) {
+        $sanitizedProblem['debug']['message'] = 'The original exception message could not be encoded.';
+      }
+
+      try {
+        $body = json_encode($sanitizedProblem, $flags);
+      } catch (JsonException $fallbackException) {
+        $fallbackProblem = [
+          'type' => 'about:blank',
+          'title' => 'Error',
+          'status' => $status,
+          'detail' => 'An unexpected error occurred.',
+          'instance' => 'about:blank',
+        ];
+
+        $body = json_encode($fallbackProblem, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+      }
+    }
+
     return new Response(
       $status,
       ['Content-Type' => 'application/problem+json'],
-      json_encode($problem, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)
+      $body
     );
   }
 
