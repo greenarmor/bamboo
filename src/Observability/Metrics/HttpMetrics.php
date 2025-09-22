@@ -23,7 +23,8 @@ class HttpMetrics
     public function __construct(private CollectorRegistry $registry, private array $config)
     {
         $namespace = $config['namespace'] ?? 'bamboo';
-        $buckets = $this->resolveBuckets('bamboo_http_request_duration_seconds');
+        $durationMetric = sprintf('%s_http_request_duration_seconds', $namespace);
+        $buckets = $this->resolveBuckets($durationMetric);
 
         $this->requestsTotal = $registry->getOrRegisterCounter(
             $namespace,
