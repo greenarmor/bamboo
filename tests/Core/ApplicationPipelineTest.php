@@ -225,4 +225,43 @@ class ApplicationPipelineTest extends TestCase {
 
     @unlink($temp);
   }
+
+  public function testKernelReusesMiddlewareCacheForUnmatchedRoutes(): void {
+    $config = $this->baseConfig([
+      'global' => ['alpha'],
+      'groups' => [],
+      'aliases' => [
+        'alpha' => AlphaMiddleware::class,
+      ],
+    ]);
+
+    $app = $this->createApp($config);
+    $kernel = $app->get(Kernel::class);
+    $ref = new \ReflectionProperty($kernel, 'resolved');
+    $ref->setAccessible(true);
+
+    $this->assertSame([], $ref->getValue($kernel));
+
+    $responseOne = $app->handle(new ServerRequest('GET', '/missing-one'));
+    $this->assertSame(404, $responseOne->getStatusCode());
+
+    $firstCache = $ref->getValue($kernel);
+    $this->assertArrayHasKey('__global__', $firstCache);
+    $this->assertCount(1, $firstCache);
+
+    $responseTwo = $app->handle(new ServerRequest('GET', '/missing-two'));
+    $this->assertSame(404, $responseTwo->getStatusCode());
+
+    $secondCache = $ref->getValue($kernel);
+    $this->assertCount(1, $secondCache);
+    $this->assertArrayHasKey('__global__', $secondCache);
+    $this->assertSame($firstCache['__global__'], $secondCache['__global__']);
+
+    $this->assertSame([
+      'alpha:before',
+      'alpha:after',
+      'alpha:before',
+      'alpha:after',
+    ], PipelineRecorder::$events);
+  }
 }

@@ -34,12 +34,14 @@ class Application extends Container {
     $this->instances['request.context'] = $context;
     $router = $this->get('router');
     $match = $router->match($request);
-    $definition = $match['route'] ?? null;
+    $hasRoute = array_key_exists('route', $match);
+    $definition = $hasRoute ? $match['route'] : null;
     $routeSignature = $definition['signature'] ?? sprintf('%s %s', $request->getMethod(), $request->getUri()->getPath());
     $routeMiddleware = $definition['middleware'] ?? [];
     $context->merge(['route' => $routeSignature]);
+    $kernelCacheKey = $hasRoute ? ($definition['signature'] ?? $routeSignature) : '__global__';
     $kernel = $this->get(Kernel::class);
-    $middleware = $kernel->forRoute($routeSignature, $routeMiddleware);
+    $middleware = $kernel->forRoute($kernelCacheKey, $routeMiddleware);
     $runner = array_reduce(
       array_reverse($middleware),
       function(callable $next, string $middlewareClass) {
