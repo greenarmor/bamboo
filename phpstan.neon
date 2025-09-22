@@ -1,0 +1,18 @@
+includes:
+    - phpstan-baseline.neon
+
+parameters:
+    level: 8
+    paths:
+        - bin
+        - bootstrap
+        - etc
+        - routes
+        - src
+        - tests
+    tmpDir: var/cache/phpstan
+    bootstrapFiles:
+        - vendor/autoload.php
+    checkMissingIterableValueType: true
+    checkGenericClassInNonGenericObjectType: true
+    treatPhpDocTypesAsCertain: false

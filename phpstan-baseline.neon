@@ -1,0 +1,576 @@
+parameters:
+	ignoreErrors:
+		-
+			message: "#^Call to method on\\(\\) on an unknown class OpenSwoole\\\\HTTP\\\\Server\\.$#"
+			count: 2
+			path: bootstrap/server.php
+
+		-
+			message: "#^Call to method set\\(\\) on an unknown class OpenSwoole\\\\HTTP\\\\Server\\.$#"
+			count: 1
+			path: bootstrap/server.php
+
+		-
+			message: "#^Call to method start\\(\\) on an unknown class OpenSwoole\\\\HTTP\\\\Server\\.$#"
+			count: 1
+			path: bootstrap/server.php
+
+		-
+			message: "#^Instantiated class OpenSwoole\\\\HTTP\\\\Server not found\\.$#"
+			count: 1
+			path: bootstrap/server.php
+
+		-
+			message: "#^Parameter \\$req of anonymous function has invalid type OpenSwoole\\\\HTTP\\\\Request\\.$#"
+			count: 1
+			path: bootstrap/server.php
+
+		-
+			message: "#^Parameter \\$res of anonymous function has invalid type OpenSwoole\\\\HTTP\\\\Response\\.$#"
+			count: 1
+			path: bootstrap/server.php
+
+		-
+			message: "#^Call to function method_exists\\(\\) with '\\\\\\\\OpenSwoole\\\\\\\\Util' and 'getCPUNum' will always evaluate to false\\.$#"
+			count: 1
+			path: etc/server.php
+
+		-
+			message: "#^Parameter \\#1 \\$string of function trim expects string, string\\|false\\|null given\\.$#"
+			count: 1
+			path: etc/server.php
+
+		-
+			message: "#^Parameter \\#3 \\$body of class Nyholm\\\\Psr7\\\\Response constructor expects Psr\\\\Http\\\\Message\\\\StreamInterface\\|resource\\|string\\|null, string\\|false given\\.$#"
+			count: 2
+			path: routes/http.php
+
+		-
+			message: "#^Undefined variable\\: \\$this$#"
+			count: 2
+			path: routes/http.php
+
+		-
+			message: "#^Variable \\$this might not be defined\\.$#"
+			count: 1
+			path: routes/http.php
+
+		-
+			message: "#^Method Bamboo\\\\Console\\\\Command\\\\AppKeyMake\\:\\:handle\\(\\) has parameter \\$args with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Console/Command/AppKeyMake.php
+
+		-
+			message: "#^Parameter \\#1 \\$string of function rtrim expects string, string\\|false given\\.$#"
+			count: 1
+			path: src/Console/Command/AppKeyMake.php
+
+		-
+			message: "#^Parameter \\#2 \\$subject of function preg_match expects string, string\\|false given\\.$#"
+			count: 2
+			path: src/Console/Command/AppKeyMake.php
+
+		-
+			message: "#^Parameter \\#3 \\$subject of function preg_replace expects array\\|string, string\\|false given\\.$#"
+			count: 1
+			path: src/Console/Command/AppKeyMake.php
+
+		-
+			message: "#^Argument of an invalid type array\\<int, string\\>\\|false supplied for foreach, only iterables are supported\\.$#"
+			count: 1
+			path: src/Console/Command/CachePurge.php
+
+		-
+			message: "#^Method Bamboo\\\\Console\\\\Command\\\\CachePurge\\:\\:handle\\(\\) has parameter \\$args with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Console/Command/CachePurge.php
+
+		-
+			message: "#^Method Bamboo\\\\Console\\\\Command\\\\ClientCall\\:\\:handle\\(\\) has parameter \\$args with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Console/Command/ClientCall.php
+
+		-
+			message: "#^Method Bamboo\\\\Console\\\\Command\\\\Command\\:\\:handle\\(\\) has parameter \\$args with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Console/Command/Command.php
+
+		-
+			message: "#^Method Bamboo\\\\Console\\\\Command\\\\DevWatch\\:\\:createWatcher\\(\\) has parameter \\$paths with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Console/Command/DevWatch.php
+
+		-
+			message: "#^Method Bamboo\\\\Console\\\\Command\\\\DevWatch\\:\\:handle\\(\\) has parameter \\$args with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Console/Command/DevWatch.php
+
+		-
+			message: "#^Method Bamboo\\\\Console\\\\Command\\\\DevWatch\\:\\:parseOptions\\(\\) has parameter \\$args with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Console/Command/DevWatch.php
+
+		-
+			message: "#^Method Bamboo\\\\Console\\\\Command\\\\DevWatch\\:\\:parseOptions\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Console/Command/DevWatch.php
+
+		-
+			message: "#^Method Bamboo\\\\Console\\\\Command\\\\DevWatch\\:\\:parseWatchList\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Console/Command/DevWatch.php
+
+		-
+			message: "#^Method Bamboo\\\\Console\\\\Command\\\\DevWatch\\:\\:resolveWatchPaths\\(\\) has parameter \\$paths with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Console/Command/DevWatch.php
+
+		-
+			message: "#^Method Bamboo\\\\Console\\\\Command\\\\DevWatch\\:\\:resolveWatchPaths\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Console/Command/DevWatch.php
+
+		-
+			message: "#^Method Bamboo\\\\Console\\\\Command\\\\DevWatch\\\\FinderFileWatcher\\:\\:__construct\\(\\) has parameter \\$paths with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Console/Command/DevWatch/FinderFileWatcher.php
+
+		-
+			message: "#^Property Bamboo\\\\Console\\\\Command\\\\DevWatch\\\\FinderFileWatcher\\:\\:\\$paths type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Console/Command/DevWatch/FinderFileWatcher.php
+
+		-
+			message: "#^Method Bamboo\\\\Console\\\\Command\\\\DevWatch\\\\InotifyFileWatcher\\:\\:__construct\\(\\) has parameter \\$paths with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Console/Command/DevWatch/InotifyFileWatcher.php
+
+		-
+			message: "#^Offset 'mask' on array\\{wd\\: int\\<1, max\\>, mask\\: int\\<0, max\\>, cookie\\: int\\<0, max\\>, name\\: string\\} on left side of \\?\\? always exists and is not nullable\\.$#"
+			count: 1
+			path: src/Console/Command/DevWatch/InotifyFileWatcher.php
+
+		-
+			message: "#^Offset 'name' on array\\{wd\\: int\\<1, max\\>, mask\\: int\\<0, max\\>, cookie\\: int\\<0, max\\>, name\\: string\\} on left side of \\?\\? always exists and is not nullable\\.$#"
+			count: 1
+			path: src/Console/Command/DevWatch/InotifyFileWatcher.php
+
+		-
+			message: "#^Offset 'wd' on array\\{wd\\: int\\<1, max\\>, mask\\: int\\<0, max\\>, cookie\\: int\\<0, max\\>, name\\: string\\} on left side of \\?\\? always exists and is not nullable\\.$#"
+			count: 1
+			path: src/Console/Command/DevWatch/InotifyFileWatcher.php
+
+		-
+			message: "#^Property Bamboo\\\\Console\\\\Command\\\\DevWatch\\\\InotifyFileWatcher\\:\\:\\$resource has no type specified\\.$#"
+			count: 1
+			path: src/Console/Command/DevWatch/InotifyFileWatcher.php
+
+		-
+			message: "#^Method Bamboo\\\\Console\\\\Command\\\\HttpServe\\:\\:handle\\(\\) has parameter \\$args with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Console/Command/HttpServe.php
+
+		-
+			message: "#^Method Bamboo\\\\Console\\\\Command\\\\PkgInfo\\:\\:handle\\(\\) has parameter \\$args with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Console/Command/PkgInfo.php
+
+		-
+			message: "#^Parameter \\#1 \\$json of function json_decode expects string, string\\|false given\\.$#"
+			count: 1
+			path: src/Console/Command/PkgInfo.php
+
+		-
+			message: "#^Method Bamboo\\\\Console\\\\Command\\\\QueueWork\\:\\:handle\\(\\) has parameter \\$args with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Console/Command/QueueWork.php
+
+		-
+			message: "#^Unreachable statement \\- code above always terminates\\.$#"
+			count: 1
+			path: src/Console/Command/QueueWork.php
+
+		-
+			message: "#^While loop condition is always true\\.$#"
+			count: 1
+			path: src/Console/Command/QueueWork.php
+
+		-
+			message: "#^Method Bamboo\\\\Console\\\\Command\\\\RoutesCache\\:\\:handle\\(\\) has parameter \\$args with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Console/Command/RoutesCache.php
+
+		-
+			message: "#^Method Bamboo\\\\Console\\\\Command\\\\RoutesShow\\:\\:handle\\(\\) has parameter \\$args with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Console/Command/RoutesShow.php
+
+		-
+			message: "#^Method Bamboo\\\\Console\\\\Command\\\\ScheduleRun\\:\\:handle\\(\\) has parameter \\$args with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Console/Command/ScheduleRun.php
+
+		-
+			message: "#^Call to method on\\(\\) on an unknown class OpenSwoole\\\\WebSocket\\\\Server\\.$#"
+			count: 3
+			path: src/Console/Command/WsServe.php
+
+		-
+			message: "#^Call to method start\\(\\) on an unknown class OpenSwoole\\\\WebSocket\\\\Server\\.$#"
+			count: 1
+			path: src/Console/Command/WsServe.php
+
+		-
+			message: "#^Instantiated class OpenSwoole\\\\WebSocket\\\\Server not found\\.$#"
+			count: 1
+			path: src/Console/Command/WsServe.php
+
+		-
+			message: "#^Method Bamboo\\\\Console\\\\Command\\\\WsServe\\:\\:handle\\(\\) has parameter \\$args with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Console/Command/WsServe.php
+
+		-
+			message: "#^Call to an undefined method object\\:\\:description\\(\\)\\.$#"
+			count: 1
+			path: src/Console/Kernel.php
+
+		-
+			message: "#^Call to an undefined method object\\:\\:handle\\(\\)\\.$#"
+			count: 1
+			path: src/Console/Kernel.php
+
+		-
+			message: "#^Call to an undefined method object\\:\\:matches\\(\\)\\.$#"
+			count: 1
+			path: src/Console/Kernel.php
+
+		-
+			message: "#^Call to an undefined method object\\:\\:name\\(\\)\\.$#"
+			count: 1
+			path: src/Console/Kernel.php
+
+		-
+			message: "#^Method Bamboo\\\\Console\\\\Kernel\\:\\:run\\(\\) has parameter \\$argv with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Console/Kernel.php
+
+		-
+			message: "#^Property Bamboo\\\\Console\\\\Kernel\\:\\:\\$commands type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Console/Kernel.php
+
+		-
+			message: "#^Call to an undefined method object\\:\\:handle\\(\\)\\.$#"
+			count: 1
+			path: src/Core/Application.php
+
+		-
+			message: "#^Method Bamboo\\\\Core\\\\Application\\:\\:config\\(\\) has no return type specified\\.$#"
+			count: 1
+			path: src/Core/Application.php
+
+		-
+			message: "#^Method Bamboo\\\\Core\\\\Application\\:\\:config\\(\\) has parameter \\$default with no type specified\\.$#"
+			count: 1
+			path: src/Core/Application.php
+
+		-
+			message: "#^Method Bamboo\\\\Core\\\\Application\\:\\:handle\\(\\) has no return type specified\\.$#"
+			count: 1
+			path: src/Core/Application.php
+
+		-
+			message: "#^Method Bamboo\\\\Core\\\\Application\\:\\:register\\(\\) has parameter \\$provider with no type specified\\.$#"
+			count: 1
+			path: src/Core/Application.php
+
+		-
+			message: "#^Method Bamboo\\\\Core\\\\Config\\:\\:all\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Core/Config.php
+
+		-
+			message: "#^Method Bamboo\\\\Core\\\\Config\\:\\:get\\(\\) has no return type specified\\.$#"
+			count: 1
+			path: src/Core/Config.php
+
+		-
+			message: "#^Method Bamboo\\\\Core\\\\Config\\:\\:get\\(\\) has parameter \\$default with no type specified\\.$#"
+			count: 1
+			path: src/Core/Config.php
+
+		-
+			message: "#^Property Bamboo\\\\Core\\\\Container\\:\\:\\$bindings type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Core/Container.php
+
+		-
+			message: "#^Property Bamboo\\\\Core\\\\Container\\:\\:\\$instances type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Core/Container.php
+
+		-
+			message: "#^Access to property \\$get on an unknown class OpenSwoole\\\\HTTP\\\\Request\\.$#"
+			count: 1
+			path: src/Core/Helpers.php
+
+		-
+			message: "#^Access to property \\$header on an unknown class OpenSwoole\\\\HTTP\\\\Request\\.$#"
+			count: 1
+			path: src/Core/Helpers.php
+
+		-
+			message: "#^Access to property \\$server on an unknown class OpenSwoole\\\\HTTP\\\\Request\\.$#"
+			count: 6
+			path: src/Core/Helpers.php
+
+		-
+			message: "#^Call to method rawContent\\(\\) on an unknown class OpenSwoole\\\\HTTP\\\\Request\\.$#"
+			count: 1
+			path: src/Core/Helpers.php
+
+		-
+			message: "#^Parameter \\$req of method Bamboo\\\\Core\\\\Helpers\\:\\:toPsrRequest\\(\\) has invalid type OpenSwoole\\\\HTTP\\\\Request\\.$#"
+			count: 1
+			path: src/Core/Helpers.php
+
+		-
+			message: "#^Call to method end\\(\\) on an unknown class OpenSwoole\\\\HTTP\\\\Response\\.$#"
+			count: 1
+			path: src/Core/ResponseEmitter.php
+
+		-
+			message: "#^Call to method header\\(\\) on an unknown class OpenSwoole\\\\HTTP\\\\Response\\.$#"
+			count: 1
+			path: src/Core/ResponseEmitter.php
+
+		-
+			message: "#^Call to method status\\(\\) on an unknown class OpenSwoole\\\\HTTP\\\\Response\\.$#"
+			count: 1
+			path: src/Core/ResponseEmitter.php
+
+		-
+			message: "#^Method Bamboo\\\\Core\\\\ResponseEmitter\\:\\:emit\\(\\) has parameter \\$psr with no type specified\\.$#"
+			count: 1
+			path: src/Core/ResponseEmitter.php
+
+		-
+			message: "#^Method Bamboo\\\\Core\\\\ResponseEmitter\\:\\:emitCli\\(\\) has parameter \\$psr with no type specified\\.$#"
+			count: 1
+			path: src/Core/ResponseEmitter.php
+
+		-
+			message: "#^Parameter \\$res of method Bamboo\\\\Core\\\\ResponseEmitter\\:\\:emit\\(\\) has invalid type OpenSwoole\\\\HTTP\\\\Response\\.$#"
+			count: 1
+			path: src/Core/ResponseEmitter.php
+
+		-
+			message: "#^Method Bamboo\\\\Core\\\\Router\\:\\:all\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Core/Router.php
+
+		-
+			message: "#^Method Bamboo\\\\Core\\\\Router\\:\\:dispatch\\(\\) has no return type specified\\.$#"
+			count: 1
+			path: src/Core/Router.php
+
+		-
+			message: "#^Method Bamboo\\\\Core\\\\Router\\:\\:get\\(\\) has no return type specified\\.$#"
+			count: 1
+			path: src/Core/Router.php
+
+		-
+			message: "#^Method Bamboo\\\\Core\\\\Router\\:\\:get\\(\\) has parameter \\$action with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Core/Router.php
+
+		-
+			message: "#^Method Bamboo\\\\Core\\\\Router\\:\\:post\\(\\) has no return type specified\\.$#"
+			count: 1
+			path: src/Core/Router.php
+
+		-
+			message: "#^Method Bamboo\\\\Core\\\\Router\\:\\:post\\(\\) has parameter \\$action with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Core/Router.php
+
+		-
+			message: "#^Parameter \\#3 \\$body of class Nyholm\\\\Psr7\\\\Response constructor expects Psr\\\\Http\\\\Message\\\\StreamInterface\\|resource\\|string\\|null, string\\|false given\\.$#"
+			count: 2
+			path: src/Core/Router.php
+
+		-
+			message: "#^Property Bamboo\\\\Core\\\\Router\\:\\:\\$routes type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Core/Router.php
+
+		-
+			message: "#^Method Bamboo\\\\Http\\\\Client\\\\ClientInterface\\:\\:sendConcurrent\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Http/Client/ClientInterface.php
+
+		-
+			message: "#^Call to method add\\(\\) on an unknown class OpenSwoole\\\\Coroutine\\\\WaitGroup\\.$#"
+			count: 1
+			path: src/Http/Client/Psr18Client.php
+
+		-
+			message: "#^Call to method done\\(\\) on an unknown class OpenSwoole\\\\Coroutine\\\\WaitGroup\\.$#"
+			count: 1
+			path: src/Http/Client/Psr18Client.php
+
+		-
+			message: "#^Call to method wait\\(\\) on an unknown class OpenSwoole\\\\Coroutine\\\\WaitGroup\\.$#"
+			count: 1
+			path: src/Http/Client/Psr18Client.php
+
+		-
+			message: "#^Call to static method create\\(\\) on an unknown class OpenSwoole\\\\Coroutine\\.$#"
+			count: 1
+			path: src/Http/Client/Psr18Client.php
+
+		-
+			message: "#^Call to static method sleep\\(\\) on an unknown class OpenSwoole\\\\Coroutine\\.$#"
+			count: 1
+			path: src/Http/Client/Psr18Client.php
+
+		-
+			message: "#^Instantiated class OpenSwoole\\\\Coroutine\\\\WaitGroup not found\\.$#"
+			count: 1
+			path: src/Http/Client/Psr18Client.php
+
+		-
+			message: "#^Method Bamboo\\\\Http\\\\Client\\\\Psr18Client\\:\\:__construct\\(\\) has parameter \\$options with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Http/Client/Psr18Client.php
+
+		-
+			message: "#^Method Bamboo\\\\Http\\\\Client\\\\Psr18Client\\:\\:sendConcurrent\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Http/Client/Psr18Client.php
+
+		-
+			message: "#^Method Bamboo\\\\Http\\\\Client\\\\Psr18Client\\:\\:withRetry\\(\\) has no return type specified\\.$#"
+			count: 1
+			path: src/Http/Client/Psr18Client.php
+
+		-
+			message: "#^Parameter \\#1 \\$content of method Nyholm\\\\Psr7\\\\Factory\\\\Psr17Factory\\:\\:createStream\\(\\) expects string, string\\|false given\\.$#"
+			count: 1
+			path: src/Http/Client/Psr18Client.php
+
+		-
+			message: "#^Method Bamboo\\\\Web\\\\Controller\\\\Home\\:\\:index\\(\\) has no return type specified\\.$#"
+			count: 1
+			path: src/Web/Controller/Home.php
+
+		-
+			message: "#^Parameter \\#3 \\$body of class Nyholm\\\\Psr7\\\\Response constructor expects Psr\\\\Http\\\\Message\\\\StreamInterface\\|resource\\|string\\|null, string\\|false given\\.$#"
+			count: 1
+			path: src/Web/Controller/Home.php
+
+		-
+			message: "#^Property Bamboo\\\\Web\\\\Kernel\\:\\:\\$middleware type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Web/Kernel.php
+
+		-
+			message: "#^Method Bamboo\\\\Web\\\\Middleware\\\\RequestId\\:\\:handle\\(\\) has no return type specified\\.$#"
+			count: 1
+			path: src/Web/Middleware/RequestId.php
+
+		-
+			message: "#^Method Bamboo\\\\Web\\\\Middleware\\\\SignatureHeader\\:\\:handle\\(\\) has no return type specified\\.$#"
+			count: 1
+			path: src/Web/Middleware/SignatureHeader.php
+
+		-
+			message: "#^Parameter \\#3 \\$body of class Nyholm\\\\Psr7\\\\Response constructor expects Psr\\\\Http\\\\Message\\\\StreamInterface\\|resource\\|string\\|null, string\\|false given\\.$#"
+			count: 1
+			path: src/Web/ProblemDetailsHandler.php
+
+		-
+			message: "#^Method Bamboo\\\\Web\\\\RequestContext\\:\\:all\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Web/RequestContext.php
+
+		-
+			message: "#^Method Bamboo\\\\Web\\\\RequestContext\\:\\:merge\\(\\) has parameter \\$values with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Web/RequestContext.php
+
+		-
+			message: "#^Property Bamboo\\\\Web\\\\RequestContext\\:\\:\\$values type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Web/RequestContext.php
+
+		-
+			message: "#^Parameter \\#2 \\$cwd of static method Symfony\\\\Component\\\\Process\\\\Process\\:\\:fromShellCommandline\\(\\) expects string\\|null, string\\|false given\\.$#"
+			count: 1
+			path: tests/Console/DevWatchTest.php
+
+		-
+			message: "#^Method Tests\\\\Core\\\\AlphaMiddleware\\:\\:handle\\(\\) has no return type specified\\.$#"
+			count: 1
+			path: tests/Core/ApplicationPipelineTest.php
+
+		-
+			message: "#^Method Tests\\\\Core\\\\BetaMiddleware\\:\\:handle\\(\\) has no return type specified\\.$#"
+			count: 1
+			path: tests/Core/ApplicationPipelineTest.php
+
+		-
+			message: "#^Property Tests\\\\Core\\\\PipelineRecorder\\:\\:\\$events type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: tests/Core/ApplicationPipelineTest.php
+
+		-
+			message: "#^Property class@anonymous/tests/Core/ApplicationPipelineTest\\.php\\:52\\:\\:\\$middleware type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: tests/Core/ApplicationPipelineTest.php
+
+		-
+			message: "#^While loop condition is always true\\.$#"
+			count: 1
+			path: tests/Fixtures/fake-server.php
+
+		-
+			message: "#^Method Tests\\\\ArrayConfig\\:\\:__construct\\(\\) has parameter \\$items with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: tests/RouterCacheTest.php
+
+		-
+			message: "#^Method Tests\\\\ArrayConfig\\:\\:all\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: tests/RouterCacheTest.php
+
+		-
+			message: "#^Method Tests\\\\ArrayConfig\\:\\:get\\(\\) has no return type specified\\.$#"
+			count: 1
+			path: tests/RouterCacheTest.php
+
+		-
+			message: "#^Method Tests\\\\ArrayConfig\\:\\:get\\(\\) has parameter \\$default with no type specified\\.$#"
+			count: 1
+			path: tests/RouterCacheTest.php
+
+		-
+			message: "#^Method Tests\\\\TestApplication\\:\\:__construct\\(\\) has parameter \\$routeDefinitions with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: tests/RouterCacheTest.php
+
+		-
+			message: "#^Parameter \\#2 \\$haystack of method PHPUnit\\\\Framework\\\\Assert\\:\\:assertStringContainsString\\(\\) expects string, string\\|false given\\.$#"
+			count: 2
+			path: tests/RouterCacheTest.php
+
+		-
+			message: "#^Property Tests\\\\RouterCacheTest\\:\\:\\$tempFiles type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: tests/RouterCacheTest.php
+
+		-
+			message: "#^Cannot access offset 'request' on array\\|DateTimeImmutable\\|int\\|string\\.$#"
+			count: 3
+			path: tests/Web/RequestIdMiddlewareTest.php

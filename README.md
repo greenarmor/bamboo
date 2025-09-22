@@ -25,6 +25,34 @@ curl http://127.0.0.1:9501/api/httpbin
 http.serve, routes.show, routes.cache, cache.purge, app.key.make,
 queue.work, ws.serve, dev.watch, schedule.run, pkg.info, client.call
 
+## Quality tooling & CI
+
+### Local developer workflow
+
+Install the dev dependencies with Composer (OpenSwoole must be available
+locally, or install with `--ignore-platform-req=ext-openswoole` for read-only
+operations), then use the provided Composer scripts:
+
+```bash
+composer validate --strict   # verify composer.json/composer.lock structure
+composer lint                # run PHP CS Fixer in dry-run mode
+composer stan                # execute PHPStan (level 8, baseline enforced)
+composer test                # run the full PHPUnit suite
+```
+
+The PHPStan baseline (`phpstan-baseline.neon`) captures existing
+framework-specific dynamic behaviour. Refresh it after addressing reported
+issues with `vendor/bin/phpstan analyse --generate-baseline` to keep the
+baseline in sync.
+
+### Continuous integration
+
+`.github/workflows/ci.yml` runs on every push and pull request across a PHP
+8.2/8.3/8.4 matrix. Each job installs OpenSwoole, caches Composer and PHPUnit
+artifacts, and then executes Composer validation, PHP CS Fixer (dry run),
+PHPStan, and PHPUnit. On failure the workflow uploads collected logs and cache
+artifacts for triage. Check the GitHub Actions tab for the latest status.
+
 ## Overview
 
 Bamboo is a lean PHP application framework that runs on OpenSwoole and

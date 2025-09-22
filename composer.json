@@ -46,12 +46,17 @@
     }
   },
   "require-dev": {
+    "friendsofphp/php-cs-fixer": "^3.68",
+    "phpstan/phpstan": "^1.12",
     "phpunit/phpunit": "^11.2"
   },
   "bin": [
     "bin/bamboo"
   ],
   "scripts": {
+    "lint": "php-cs-fixer fix --config=.php-cs-fixer.php --diff --dry-run",
+    "stan": "phpstan analyse --memory-limit=512M",
+    "test": "phpunit",
     "post-install-cmd": [
       "php bin/bamboo app.key.make --if-missing"
     ],
