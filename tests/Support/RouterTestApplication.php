@@ -8,7 +8,7 @@ final class RouterTestApplication extends Application
 {
     private Router $routerInstance;
 
-    /** @var array<int, array{0:string,1:string,2:callable|array}> */
+    /** @var array<int, array{0:string,1:string,2:callable|array|\Bamboo\Core\RouteDefinition,3?:array,4?:array}> */
     private array $definitions;
 
     public function __construct(array $definitions = [], array $configOverrides = [])
@@ -61,8 +61,8 @@ final class RouterTestApplication extends Application
         $router = $this->routerInstance;
 
         foreach ($this->definitions as $definition) {
-            [$method, $path, $handler] = $definition;
-            $router->{strtolower($method)}($path, $handler);
+            [$method, $path, $handler, $middleware, $middlewareGroups] = array_pad($definition, 5, []);
+            $router->{strtolower($method)}($path, $handler, $middleware, $middlewareGroups);
         }
     }
 

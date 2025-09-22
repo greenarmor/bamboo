@@ -4,6 +4,7 @@ namespace Tests\Http;
 
 use Bamboo\Core\Application;
 use Bamboo\Core\Config;
+use Bamboo\Core\RouteDefinition;
 use Bamboo\Provider\AppProvider;
 use Bamboo\Web\RequestContext;
 use Monolog\Handler\TestHandler;
@@ -27,11 +28,11 @@ class RequestIdMiddlewareTest extends TestCase {
   public function testPropagatesInboundRequestId(): void {
     $app = $this->createApp();
     $captured = [];
-    $app->get('router')->get('/context', function($request) use (&$captured) {
+    $app->get('router')->get('/context', RouteDefinition::forHandler(function($request) use (&$captured) {
       $captured['request_id'] = $request->getAttribute('request_id');
       $captured['correlation_id'] = $request->getAttribute('correlation_id');
       return new Response(204);
-    });
+    }, middlewareGroups: ['web']));
 
     $request = (new ServerRequest('GET', '/context'))->withHeader('X-Request-ID', 'abc-123');
     $response = $app->handle($request);
@@ -47,7 +48,7 @@ class RequestIdMiddlewareTest extends TestCase {
 
   public function testGeneratedRequestIdAppearsInLoggerContext(): void {
     $app = $this->createApp();
-    $app->get('router')->get('/logger', fn() => new Response(200, [], 'ok'));
+    $app->get('router')->get('/logger', fn() => new Response(200, [], 'ok'), [], ['web']);
 
     $response = $app->handle(new ServerRequest('GET', '/logger'));
     $generatedId = $response->getHeaderLine('X-Request-ID');
@@ -67,7 +68,7 @@ class RequestIdMiddlewareTest extends TestCase {
 
   public function testConcurrentRequestsReceiveDistinctIds(): void {
     $app = $this->createApp();
-    $app->get('router')->get('/unique', fn() => new Response(200, [], 'ok'));
+    $app->get('router')->get('/unique', fn() => new Response(200, [], 'ok'), [], ['web']);
 
     $first = $app->handle(new ServerRequest('GET', '/unique'));
     $second = $app->handle(new ServerRequest('GET', '/unique'));

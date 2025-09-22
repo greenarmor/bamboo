@@ -1,15 +1,26 @@
 <?php
+
+use Bamboo\Core\RouteDefinition;
+
 /** @var Bamboo\Core\Router $router */
 $router = $this->get('router');
 
-$router->get('/', [Bamboo\Web\Controller\Home::class, 'index']);
-$router->get('/hello/{name}', function($request, $vars){
-  return new Nyholm\Psr7\Response(200, ['Content-Type'=>'text/plain'], "Hello, {$vars['name']}!\n");
-});
+$router->get('/', RouteDefinition::forHandler(
+  [Bamboo\Web\Controller\Home::class, 'index'],
+  middlewareGroups: ['web'],
+));
+
+$router->get('/hello/{name}', RouteDefinition::forHandler(
+  function($request, $vars){
+    return new Nyholm\Psr7\Response(200, ['Content-Type'=>'text/plain'], "Hello, {$vars['name']}!\n");
+  },
+  middleware: [Bamboo\Web\Middleware\SignatureHeader::class],
+));
+
 $router->post('/api/echo', function($request){
   $body = (string)$request->getBody();
   return new Nyholm\Psr7\Response(200, ['Content-Type'=>'application/json'], $body ?: '{}');
-});
+}, [Bamboo\Web\Middleware\SignatureHeader::class]);
 
 // Client API demo: concurrent GETs against httpbin
 $router->get('/api/httpbin', function() {

@@ -4,6 +4,7 @@ namespace Tests\Core;
 
 use Bamboo\Core\Application;
 use Bamboo\Core\Config;
+use Bamboo\Core\RouteDefinition;
 use Bamboo\Provider\AppProvider;
 use Bamboo\Web\Kernel;
 use Bamboo\Web\RequestContext;
@@ -126,16 +127,17 @@ class ApplicationPipelineTest extends TestCase {
     $app = $this->createApp($config);
 
     $captured = [];
-    $app->get('router')->get('/pipeline', [
-      'middleware' => ['beta-group', 'delta'],
-      'handler' => function(Request $request) use (&$captured) {
+    $app->get('router')->get('/pipeline', RouteDefinition::forHandler(
+      function(Request $request) use (&$captured) {
         $captured['alpha'] = $request->getAttribute('alpha');
         $captured['beta'] = $request->getAttribute('beta');
         $captured['gamma'] = $request->getAttribute('gamma');
         $captured['delta'] = $request->getAttribute('delta');
         return new Response(200, [], 'ok');
       },
-    ]);
+      middleware: ['delta'],
+      middlewareGroups: ['beta-group'],
+    ));
 
     $routerResponse = $app->handle(new ServerRequest('GET', '/pipeline'));
 
@@ -166,6 +168,14 @@ class ApplicationPipelineTest extends TestCase {
     $ref->setAccessible(true);
     $cached = $ref->getValue($kernel);
     $this->assertArrayHasKey('GET /pipeline', $cached);
+    $this->assertSame([
+      \Bamboo\Web\Middleware\RequestId::class,
+      AlphaMiddleware::class,
+      \Bamboo\Web\Middleware\SignatureHeader::class,
+      BetaMiddleware::class,
+      GammaMiddleware::class,
+      DeltaMiddleware::class,
+    ], $cached['GET /pipeline']);
 
     $app->handle(new ServerRequest('GET', '/pipeline'));
     $this->assertSame($cached, $ref->getValue($kernel), 'Route middleware cache should be reused across requests.');

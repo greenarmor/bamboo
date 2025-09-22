@@ -29,6 +29,7 @@ class RouterCacheTest extends TestCase {
         '/users' => [
           'handler' => [DummyController::class, 'index'],
           'middleware' => [],
+          'middleware_groups' => [],
           'signature' => 'GET /users',
         ],
       ],
@@ -36,6 +37,7 @@ class RouterCacheTest extends TestCase {
         '/users' => [
           'handler' => [DummyController::class, 'store'],
           'middleware' => [],
+          'middleware_groups' => [],
           'signature' => 'POST /users',
         ],
       ],
@@ -81,6 +83,7 @@ class RouterCacheTest extends TestCase {
         '/users' => [
           'handler' => [DummyController::class, 'index'],
           'middleware' => [],
+          'middleware_groups' => [],
           'signature' => 'GET /users',
         ],
       ],

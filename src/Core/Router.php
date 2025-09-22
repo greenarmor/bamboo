@@ -11,13 +11,24 @@ use Psr\Http\Message\ServerRequestInterface as Request;
 class Router {
   protected array $routes = [];
 
-  public function addRoute(string $method, string $path, callable|array $action): void {
+  public function addRoute(string $method, string $path, callable|array|RouteDefinition $action, array $middleware = [], array $middlewareGroups = []): void {
     $method = strtoupper($method);
-    $this->routes[$method][$path] = $this->normalizeRoute($method, $path, $action);
+    $this->routes[$method][$path] = $this->normalizeRoute($method, $path, $action, $middleware, $middlewareGroups);
   }
 
-  public function get(string $path, callable|array $action) { $this->addRoute('GET', $path, $action); }
-  public function post(string $path, callable|array $action) { $this->addRoute('POST', $path, $action); }
+  public function get(string $path, callable|array|RouteDefinition $action, array $middleware = [], array $middlewareGroups = []): void {
+    $this->addRoute('GET', $path, $action, $middleware, $middlewareGroups);
+  }
+
+  public function post(string $path, callable|array|RouteDefinition $action, array $middleware = [], array $middlewareGroups = []): void {
+    $this->addRoute('POST', $path, $action, $middleware, $middlewareGroups);
+  }
+
+  public function gatherMiddleware(array $definition): array {
+    $groups = $definition['middleware_groups'] ?? [];
+    $route = $definition['middleware'] ?? [];
+    return array_values(array_merge($groups, $route));
+  }
   public function all(): array { return $this->routes; }
 
   public function cacheTo(string $file): void {
@@ -106,20 +117,21 @@ class Router {
     return new Response(500, ['Content-Type' => 'application/json'], json_encode(['error' => 'Routing failure']));
   }
 
-  private function normalizeRoute(string $method, string $path, callable|array $action): array {
-    if (is_array($action) && array_key_exists('handler', $action) && array_key_exists('middleware', $action)) {
-      return [
-        'handler' => $action['handler'],
-        'middleware' => $this->normalizeMiddleware($action['middleware']),
-        'signature' => $action['signature'] ?? sprintf('%s %s', $method, $path),
-      ];
-    }
+  private function normalizeRoute(string $method, string $path, callable|array|RouteDefinition $action, array $middleware = [], array $middlewareGroups = []): array {
+    $handler = $action instanceof RouteDefinition ? $action->handler : $action;
+    $signature = $action instanceof RouteDefinition ? $action->signature : null;
 
-    $handler = $action;
-    $middleware = [];
+    $normalizedMiddleware = $this->normalizeMiddleware($middleware);
+    $normalizedGroups = $this->normalizeMiddleware($middlewareGroups);
 
-    if (is_array($action) && $this->isAssociative($action)) {
-      $middleware = $this->normalizeMiddleware($action['middleware'] ?? []);
+    if ($action instanceof RouteDefinition) {
+      $normalizedMiddleware = [...$normalizedMiddleware, ...$this->normalizeMiddleware($action->middleware)];
+      $normalizedGroups = [...$normalizedGroups, ...$this->normalizeMiddleware($action->middlewareGroups)];
+    } elseif (is_array($action) && $this->isAssociative($action)) {
+      $normalizedMiddleware = [...$normalizedMiddleware, ...$this->normalizeMiddleware($action['middleware'] ?? [])];
+      $groupSource = $action['middleware_groups'] ?? $action['middlewareGroups'] ?? $action['groups'] ?? [];
+      $normalizedGroups = [...$normalizedGroups, ...$this->normalizeMiddleware($groupSource)];
+      $signature = $action['signature'] ?? $signature;
       $handler = $action['handler'] ?? $action['uses'] ?? $action['action'] ?? ($action[0] ?? null);
       if ($handler === null && isset($action[0], $action[1])) {
         $handler = [$action[0], $action[1]];
@@ -131,8 +143,9 @@ class Router {
 
     return [
       'handler' => $handler,
-      'middleware' => $this->normalizeMiddleware($middleware),
-      'signature' => sprintf('%s %s', $method, $path),
+      'middleware' => array_values($normalizedMiddleware),
+      'middleware_groups' => array_values($normalizedGroups),
+      'signature' => $signature ?? sprintf('%s %s', $method, $path),
     ];
   }
 

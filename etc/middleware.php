@@ -18,9 +18,12 @@ declare(strict_types=1);
 return [
     'global' => [
         Bamboo\Web\Middleware\RequestId::class,
-        Bamboo\Web\Middleware\SignatureHeader::class,
     ],
-    'groups' => [],
+    'groups' => [
+        'web' => [
+            Bamboo\Web\Middleware\SignatureHeader::class,
+        ],
+    ],
     'aliases' => [],
 ];
 

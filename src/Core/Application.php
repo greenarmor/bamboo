@@ -44,7 +44,7 @@ class Application extends Container {
     if ($definition === null) {
       $kernelCacheKey = '__global__';
     } elseif (is_array($definition)) {
-      $routeMiddleware = $definition['middleware'] ?? [];
+      $routeMiddleware = $router->gatherMiddleware($definition);
       $routeSignature = $definition['signature'] ?? $defaultSignature;
       $context->merge(['route' => $routeSignature]);
       $kernelCacheKey = $routeSignature;
