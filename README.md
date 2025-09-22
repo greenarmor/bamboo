@@ -21,6 +21,16 @@ php bin/bamboo client.call --url=https://httpbin.org/get
 curl http://127.0.0.1:9501/api/httpbin
 ```
 
+## Roadmap & configuration prep
+
+The v0.3 planning notes live in
+[`docs/roadmap/v0.3-prep.md`](docs/roadmap/v0.3-prep.md). The document outlines
+the upcoming middleware pipeline, module contract, and where configuration will
+reside. Placeholder configuration entry points
+[`etc/middleware.php`](etc/middleware.php) and [`etc/modules.php`](etc/modules.php)
+currently return empty arrays with documentation so contributors can stage their
+changes without guessing future file names.
+
 ## CLI
 http.serve, routes.show, routes.cache, cache.purge, app.key.make,
 queue.work, ws.serve, dev.watch, schedule.run, pkg.info, client.call
