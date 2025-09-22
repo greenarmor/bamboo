@@ -29,7 +29,10 @@ the upcoming middleware pipeline, module contract, and where configuration will
 reside. Placeholder configuration entry points
 [`etc/middleware.php`](etc/middleware.php) and [`etc/modules.php`](etc/modules.php)
 currently return empty arrays with documentation so contributors can stage their
-changes without guessing future file names.
+changes without guessing future file names. The v0.4 observability plan is
+captured in [`docs/roadmap/v0.4-prep.md`](docs/roadmap/v0.4-prep.md), covering the
+`/metrics` exporter, Prometheus format contract, timeout/circuit-breaker
+middleware, and graceful shutdown health hooks.
 
 ## CLI
 http.serve, routes.show, routes.cache, cache.purge, app.key.make,
