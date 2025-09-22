@@ -1,10 +1,13 @@
 <?php
 namespace Bamboo\Console\Command;
+
+use Nyholm\Psr7\Factory\Psr17Factory;
+
 class ClientCall extends Command {
   public function name(): string { return 'client.call'; }
   public function description(): string { return 'Call a URL using the Bamboo HTTP client'; }
-  public function handle(array $args): int { 
-$psr17 = new Nyholm\Psr7\Factory\Psr17Factory();
+  public function handle(array $args): int {
+$psr17 = new Psr17Factory();
 $url = null; foreach ($args as $a) if (str_starts_with($a, '--url=')) $url = substr($a, 6);
 if (!$url) { echo "Usage: php bin/bamboo client.call --url=https://...\n"; return 1; }
 $http = $this->app->get('http.client');
