@@ -1,11 +1,13 @@
 <?php
 namespace Bamboo\Core;
 
+use Bamboo\Module\ModuleInterface;
 use Bamboo\Web\Kernel;
 use Bamboo\Web\RequestContext;
 use Psr\Http\Message\ServerRequestInterface as Request;
 
 class Application extends Container {
+  protected array $modules = [];
   public function __construct(protected Config $config) {
     $this->singleton(Config::class, fn() => $config);
     $this->singleton('router', fn() => new Router());
@@ -87,6 +89,30 @@ class Application extends Container {
     return $ref->newInstanceArgs($args);
   }
   public function register($provider): void { $provider->register($this); }
+  public function bootModules(array $moduleClasses): void {
+    if ($moduleClasses === []) return;
+    $config = $this->get(Config::class);
+    $instances = [];
+    foreach ($moduleClasses as $moduleClass) {
+      if (!is_string($moduleClass) || $moduleClass === '') {
+        throw new \InvalidArgumentException('Module class names must be non-empty strings.');
+      }
+      if (!class_exists($moduleClass)) {
+        throw new \InvalidArgumentException(sprintf('Module class "%s" not found.', $moduleClass));
+      }
+      $module = new $moduleClass();
+      if (!$module instanceof ModuleInterface) {
+        throw new \InvalidArgumentException(sprintf('Module class "%s" must implement %s.', $moduleClass, ModuleInterface::class));
+      }
+      $module->register($this);
+      $config->mergeMiddleware($module->middleware());
+      $instances[] = $module;
+    }
+    foreach ($instances as $module) {
+      $module->boot($this);
+    }
+    $this->modules = [...$this->modules, ...$instances];
+  }
   public function bootEloquent(): void {
     $db = $this->config('database');
     if (!$db || empty($db['connections'])) return;

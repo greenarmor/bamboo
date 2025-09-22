@@ -56,13 +56,17 @@ class DeltaMiddleware {
 }
 
 class ArrayConfig extends Config {
-  public function __construct(private array $items) { parent::__construct(''); }
+  public function __construct(private array $configuration) { parent::__construct(''); }
 
-  public function all(): array { return $this->items; }
+  protected function loadConfiguration(): array { return $this->configuration; }
 
-  public function setMiddleware(array $middleware): void { $this->items['middleware'] = $middleware; }
+  public function setMiddleware(array $middleware): void {
+    $this->configuration['middleware'] = $middleware;
+    $this->items['middleware'] = $middleware;
+  }
 
   public function setRouteCache(?string $path): void {
+    $this->configuration['cache']['routes'] = $path;
     $this->items['cache']['routes'] = $path;
   }
 }
