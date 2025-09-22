@@ -32,7 +32,10 @@ currently return empty arrays with documentation so contributors can stage their
 changes without guessing future file names. The v0.4 observability plan is
 captured in [`docs/roadmap/v0.4-prep.md`](docs/roadmap/v0.4-prep.md), covering the
 `/metrics` exporter, Prometheus format contract, timeout/circuit-breaker
-middleware, and graceful shutdown health hooks.
+middleware, and graceful shutdown health hooks. The v1.0 API freeze and
+documentation deliverables are tracked in
+[`docs/roadmap/v1.0-prep.md`](docs/roadmap/v1.0-prep.md) so the community can
+monitor checklist progress toward the stable milestone.
 
 ## CLI
 http.serve, routes.show, routes.cache, cache.purge, app.key.make,
