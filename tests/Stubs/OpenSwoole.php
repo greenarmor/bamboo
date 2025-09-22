@@ -19,23 +19,37 @@ if (!class_exists(__NAMESPACE__ . '\\Coroutine')) {
     class Coroutine
     {
         public static array $created = [];
+        private static int $nextCid = 1;
+        private static int $currentCid = -1;
 
         public static function create(callable $fn): void
         {
             self::$created[] = $fn;
-            $fn();
+            self::withCid($fn);
         }
 
         public static function run(callable $fn): bool
         {
-            $fn();
+            self::withCid($fn);
 
             return true;
         }
 
         public static function getCid(): int
         {
-            return -1;
+            return self::$currentCid;
+        }
+
+        private static function withCid(callable $fn): void
+        {
+            $previousCid = self::$currentCid;
+            self::$currentCid = self::$nextCid++;
+
+            try {
+                $fn();
+            } finally {
+                self::$currentCid = $previousCid;
+            }
         }
 
         public static function sleep(float $seconds): void

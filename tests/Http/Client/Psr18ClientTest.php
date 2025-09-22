@@ -9,6 +9,7 @@ use PHPUnit\Framework\TestCase;
 use Psr\Http\Client\ClientInterface as Psr18;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
+use Tests\Stubs\OpenSwooleHook;
 
 class RecordingPsr18Client implements Psr18 {
   /** @var array<int, ResponseInterface|\Throwable> */
@@ -96,5 +97,62 @@ class Psr18ClientTest extends TestCase {
     $this->assertSame('https://example.com/a', (string) $delegate->requests[0]->getUri());
     $this->assertSame('https://example.com/b', (string) $delegate->requests[1]->getUri());
     $this->assertSame('https://example.com/b', (string) $delegate->requests[2]->getUri());
+  }
+
+  public function testSendConcurrentWithinOpenSwooleCoroutine(): void {
+    \OpenSwoole\Coroutine::$created = [];
+
+    $psr17 = new Psr17Factory();
+    $responses = [
+      $psr17->createResponse(200)->withBody($psr17->createStream('one')),
+      $psr17->createResponse(200)->withBody($psr17->createStream('two')),
+    ];
+
+    $delegate = new RecordingPsr18Client($responses);
+    $client = new Psr18Client($delegate, []);
+
+    $requests = [
+      new ServerRequest('GET', 'https://example.com/a'),
+      new ServerRequest('GET', 'https://example.com/b'),
+    ];
+
+    $results = null;
+    \OpenSwoole\Coroutine::run(function () use ($client, $requests, &$results): void {
+      $results = $client->sendConcurrent($requests);
+    });
+
+    $this->assertIsArray($results);
+    $this->assertCount(2, $results);
+    $this->assertSame('one', (string) $results[0]->getBody());
+    $this->assertSame('two', (string) $results[1]->getBody());
+    $this->assertCount(2, \OpenSwoole\Coroutine::$created);
+    $this->assertSame(-1, \OpenSwoole\Coroutine::getCid());
+  }
+
+  public function testSleepMicrosUsesCoroutineUsleepWhenAvailable(): void {
+    OpenSwooleHook::reset();
+
+    $psr17 = new Psr17Factory();
+    $responses = [
+      $psr17->createResponse(500)->withBody($psr17->createStream('retry')),
+      $psr17->createResponse(200)->withBody($psr17->createStream('ok')),
+    ];
+
+    $delegate = new RecordingPsr18Client($responses);
+    $client = new Psr18Client($delegate, [
+      'retries' => ['max' => 1, 'status_codes' => [500], 'base_delay_ms' => 1],
+    ]);
+
+    $request = $psr17->createRequest('GET', 'https://example.com/slow');
+
+    $response = null;
+    \OpenSwoole\Coroutine::run(function () use ($client, $request, &$response): void {
+      $response = $client->send($request);
+    });
+
+    $this->assertSame(200, $response->getStatusCode());
+    $this->assertNotEmpty(OpenSwooleHook::$microSleeps);
+    $this->assertSame([1000], OpenSwooleHook::$microSleeps);
+    $this->assertSame(-1, \OpenSwoole\Coroutine::getCid());
   }
 }
