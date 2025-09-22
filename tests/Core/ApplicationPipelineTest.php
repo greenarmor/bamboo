@@ -6,6 +6,7 @@ use Bamboo\Core\Application;
 use Bamboo\Core\Config;
 use Bamboo\Core\RouteDefinition;
 use Bamboo\Provider\AppProvider;
+use Bamboo\Provider\MetricsProvider;
 use Bamboo\Web\Kernel;
 use Bamboo\Web\RequestContext;
 use Nyholm\Psr7\Response;
@@ -136,11 +137,12 @@ class ApplicationPipelineTest extends TestCase {
     return new ArrayConfig($items);
   }
 
-  private function createApp(Config $config): Application {
-    $app = new Application($config);
-    $app->register(new AppProvider());
-    return $app;
-  }
+    private function createApp(Config $config): Application {
+        $app = new Application($config);
+        $app->register(new AppProvider());
+        $app->register(new MetricsProvider());
+        return $app;
+    }
 
   public function testMiddlewarePipelineResolvesConfiguredOrder(): void {
     $middleware = [

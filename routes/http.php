@@ -10,6 +10,10 @@ $router->get('/', RouteDefinition::forHandler(
   middlewareGroups: ['web'],
 ));
 
+$router->get('/metrics', RouteDefinition::forHandler(
+  [Bamboo\Web\Controller\MetricsController::class, 'index']
+));
+
 $router->get('/hello/{name}', RouteDefinition::forHandler(
   function($request, $vars){
     return new Nyholm\Psr7\Response(200, ['Content-Type'=>'text/plain'], "Hello, {$vars['name']}!\n");

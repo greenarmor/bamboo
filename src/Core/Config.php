@@ -90,6 +90,15 @@ class Config {
       'ws'      => require $this->dir . '/ws.php',
       'http'    => require $this->dir . '/http.php',
       'middleware' => file_exists($this->dir . '/middleware.php') ? require $this->dir . '/middleware.php' : [],
+      'metrics' => file_exists($this->dir . '/metrics.php') ? require $this->dir . '/metrics.php' : [
+        'namespace' => 'bamboo',
+        'storage' => [
+          'driver' => 'in_memory',
+        ],
+        'histogram_buckets' => [
+          'default' => [0.05, 0.1, 0.25, 0.5, 1.0, 2.5, 5.0],
+        ],
+      ],
     ];
   }
 

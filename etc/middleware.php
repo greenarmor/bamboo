@@ -17,6 +17,7 @@ declare(strict_types=1);
  */
 return [
     'global' => [
+        Bamboo\Web\Middleware\HttpMetricsCollector::class,
         Bamboo\Web\Middleware\RequestId::class,
     ],
     'groups' => [

@@ -4,6 +4,7 @@ namespace Tests\Core;
 
 use Bamboo\Core\Application;
 use Bamboo\Core\Config;
+use Bamboo\Web\Middleware\HttpMetricsCollector;
 use Bamboo\Web\Middleware\RequestId;
 use Bamboo\Web\Middleware\SignatureHeader;
 use PHPUnit\Framework\TestCase;
@@ -43,6 +44,7 @@ class ApplicationModulesTest extends TestCase
         $this->assertArrayHasKey('web', $middleware['groups']);
 
         $this->assertSame([
+            HttpMetricsCollector::class,
             RequestId::class,
             TestModuleAlpha::GLOBAL_MIDDLEWARE,
             TestModuleBeta::GLOBAL_MIDDLEWARE,

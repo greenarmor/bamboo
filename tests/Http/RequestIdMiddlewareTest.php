@@ -6,6 +6,7 @@ use Bamboo\Core\Application;
 use Bamboo\Core\Config;
 use Bamboo\Core\RouteDefinition;
 use Bamboo\Provider\AppProvider;
+use Bamboo\Provider\MetricsProvider;
 use Bamboo\Web\RequestContext;
 use Monolog\Handler\TestHandler;
 use Nyholm\Psr7\Response;
@@ -22,6 +23,7 @@ class RequestIdMiddlewareTest extends TestCase {
     $config = new Config(dirname(__DIR__, 2) . '/etc');
     $app = new Application($config);
     $app->register(new AppProvider());
+    $app->register(new MetricsProvider());
     return $app;
   }
 

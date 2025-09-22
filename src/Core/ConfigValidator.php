@@ -74,6 +74,41 @@ class ConfigValidator
             }
         }
 
+        if (isset($config['metrics']) && is_array($config['metrics'])) {
+            $metrics = $config['metrics'];
+
+            if (!array_key_exists('namespace', $metrics) || !is_string($metrics['namespace']) || trim($metrics['namespace']) === '') {
+                $errors[] = 'metrics.namespace must be a non-empty string.';
+            }
+
+            if (!array_key_exists('storage', $metrics) || !is_array($metrics['storage'])) {
+                $errors[] = 'metrics.storage must be an array.';
+            } else {
+                $storage = $metrics['storage'];
+                if (!array_key_exists('driver', $storage) || !is_string($storage['driver']) || trim($storage['driver']) === '') {
+                    $errors[] = 'metrics.storage.driver must be a non-empty string.';
+                }
+            }
+
+            if (!array_key_exists('histogram_buckets', $metrics) || !is_array($metrics['histogram_buckets'])) {
+                $errors[] = 'metrics.histogram_buckets must be an array.';
+            } else {
+                foreach ($metrics['histogram_buckets'] as $metricName => $buckets) {
+                    if (!is_array($buckets)) {
+                        $errors[] = sprintf('metrics.histogram_buckets.%s must be an array of numeric bucket upper bounds.', (string) $metricName);
+                        continue;
+                    }
+
+                    foreach ($buckets as $bucket) {
+                        if (!$this->isNumeric($bucket) || (float) $bucket < 0.0) {
+                            $errors[] = sprintf('metrics.histogram_buckets.%s contains an invalid bucket definition.', (string) $metricName);
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+
         if ($errors !== []) {
             throw new ConfigurationException($errors);
         }

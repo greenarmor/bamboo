@@ -22,6 +22,7 @@ try {
 
 $app = new Application($config);
 $app->register(new Bamboo\Provider\AppProvider());
+$app->register(new Bamboo\Provider\MetricsProvider());
 $modules = require __DIR__ . '/../etc/modules.php';
 if (!is_array($modules)) {
     throw new \InvalidArgumentException('Module configuration must return an array of class names.');
