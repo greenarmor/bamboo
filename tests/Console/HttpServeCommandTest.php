@@ -3,14 +3,22 @@
 namespace Tests\Console;
 
 use Bamboo\Console\Command\HttpServe;
+use Bamboo\Swoole\ServerInstrumentation;
+use OpenSwoole\HTTP\Server;
 use PHPUnit\Framework\TestCase;
 use Tests\Support\RouterTestApplication;
 
 class HttpServeCommandTest extends TestCase {
   protected function setUp(): void {
     parent::setUp();
-    \OpenSwoole\HTTP\Server::$lastInstance = null;
+    ServerInstrumentation::reset();
     $_ENV['LOG_FILE'] = 'php://temp';
+    $_ENV['DISABLE_HTTP_SERVER_START'] = 'true';
+  }
+
+  protected function tearDown(): void {
+    unset($_ENV['DISABLE_HTTP_SERVER_START']);
+    parent::tearDown();
   }
 
   public function testHandleBootstrapsServer(): void {
@@ -23,10 +31,10 @@ class HttpServeCommandTest extends TestCase {
     $this->assertSame(0, $exitCode);
     $this->assertStringContainsString('Bamboo HTTP online', $output);
 
-    $server = \OpenSwoole\HTTP\Server::$lastInstance;
-    $this->assertNotNull($server);
-    $this->assertTrue($server->started);
-    $this->assertSame('127.0.0.1', $server->host);
-    $this->assertSame(9501, $server->port);
+    $server = ServerInstrumentation::server();
+    $this->assertInstanceOf(Server::class, $server);
+    $this->assertTrue(ServerInstrumentation::started());
+    $this->assertSame('127.0.0.1', ServerInstrumentation::host());
+    $this->assertSame(9501, ServerInstrumentation::port());
   }
 }

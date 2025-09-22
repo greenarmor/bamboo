@@ -18,23 +18,40 @@ final class Psr18Client implements ClientInterface {
   }
 
   public function sendConcurrent(array $requests): array {
-    $responses = [];
-    $wg = new \OpenSwoole\Coroutine\WaitGroup();
-    for ($i=0; $i<count($requests); $i++) {
-      $wg->add();
-      $r = $requests[$i];
-      \OpenSwoole\Coroutine::create(function() use (&$responses, $i, $r, $wg) {
-        try {
-          $responses[$i] = $this->send($r);
-        } catch (\Throwable $e) {
-          $responses[$i] = (new Psr17Factory())->createResponse(599)->withBody(
-            (new Psr17Factory())->createStream(json_encode(['error'=>$e->getMessage()]))
-          );
-        } finally { $wg->done(); }
-      });
+    if ($requests === []) {
+      return [];
     }
-    $wg->wait();
-    ksort($responses);
+
+    $responses = [];
+    $runner = function () use (&$responses, $requests): void {
+      $wg = new \OpenSwoole\Coroutine\WaitGroup();
+      foreach ($requests as $index => $request) {
+        $wg->add();
+        \OpenSwoole\Coroutine::create(function () use (&$responses, $index, $request, $wg) {
+          try {
+            $responses[$index] = $this->send($request);
+          } catch (\Throwable $e) {
+            $responses[$index] = (new Psr17Factory())->createResponse(599)->withBody(
+              (new Psr17Factory())->createStream(json_encode(['error' => $e->getMessage()]))
+            );
+          } finally {
+            $wg->done();
+          }
+        });
+      }
+      $wg->wait();
+      ksort($responses);
+    };
+
+    if (method_exists(\OpenSwoole\Coroutine::class, 'getCid') && \OpenSwoole\Coroutine::getCid() >= 0) {
+      $runner();
+      return $responses;
+    }
+
+    \OpenSwoole\Coroutine::run(function () use (&$responses, $runner): void {
+      $runner();
+    });
+
     return $responses;
   }
 
@@ -47,8 +64,8 @@ final class Psr18Client implements ClientInterface {
 
   private function withRetry(callable $fn) {
     $cfg = $this->options['retries'] ?? [];
-    $max = (int)($cfg['max'] ?? 0);
-    $base = (int)($cfg['base_delay_ms'] ?? 100);
+    $max = max(0, (int)($cfg['max'] ?? 0));
+    $base = max(0, (int)($cfg['base_delay_ms'] ?? 100));
     $retryOn = $cfg['status_codes'] ?? [429,500,502,503,504];
 
     $attempt = 0;
@@ -62,8 +79,50 @@ final class Psr18Client implements ClientInterface {
       } catch (\Throwable $e) {
         if ($attempt > $max + 1) throw $e;
       }
-      $delay = ($base * (2 ** ($attempt - 1))) / 1000;
-      \OpenSwoole\Coroutine::sleep($delay);
+      $delayMicros = $this->backoffDelayMicros($base, $attempt);
+      $this->sleepMicros($delayMicros);
     }
+  }
+
+  private function backoffDelayMicros(int $baseDelayMs, int $attempt): int {
+    if ($baseDelayMs <= 0) {
+      return 0;
+    }
+
+    $shift = max(0, $attempt - 1);
+    $maxShift = (PHP_INT_SIZE * 8) - 2;
+    if ($shift > $maxShift) {
+      $shift = $maxShift;
+    }
+
+    $multiplier = 1 << $shift;
+    if ($multiplier <= 0) {
+      return PHP_INT_MAX;
+    }
+
+    $maxDelayMs = intdiv(PHP_INT_MAX, 1000);
+    if ($baseDelayMs > intdiv($maxDelayMs, $multiplier)) {
+      return $maxDelayMs * 1000;
+    }
+
+    $delayMs = $baseDelayMs * $multiplier;
+    if ($delayMs > $maxDelayMs) {
+      $delayMs = $maxDelayMs;
+    }
+
+    return $delayMs * 1000;
+  }
+
+  private function sleepMicros(int $delayMicros): void {
+    if ($delayMicros <= 0) {
+      return;
+    }
+
+    if (method_exists(\OpenSwoole\Coroutine::class, 'getCid') && \OpenSwoole\Coroutine::getCid() >= 0) {
+      \OpenSwoole\Coroutine::usleep($delayMicros);
+      return;
+    }
+
+    usleep($delayMicros);
   }
 }

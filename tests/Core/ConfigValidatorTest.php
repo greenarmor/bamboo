@@ -159,7 +159,7 @@ class ConfigValidatorTest extends TestCase
                 'host' => '127.0.0.1',
                 'port' => 9501,
                 'workers' => 1,
-                'task_workers' => 1,
+                'task_workers' => 0,
                 'max_requests' => 100,
                 'static_enabled' => true,
             ],

@@ -26,6 +26,14 @@ class SwooleTableAdapter implements Adapter
      */
     private const COLUMN_PAYLOAD = 'payload';
 
+    private const PREFIX_META = 'meta:';
+
+    private const PREFIX_SAMPLE = 'sample:';
+
+    private const PREFIX_SAMPLES = 'samples:';
+
+    private const PREFIX_LABELS = 'labels:';
+
     /**
      * @var \OpenSwoole\Table
      */
@@ -163,17 +171,16 @@ class SwooleTableAdapter implements Adapter
             ];
 
             foreach ($this->getSampleKeys($metaKey) as $sampleKey) {
-                $parts = explode(':', $sampleKey);
-                if (count($parts) < 4) {
+                $parsed = $this->parseSampleKey($sampleKey);
+                if ($parsed === null || $parsed['suffix'] !== 'value') {
                     continue;
                 }
 
-                $encodedLabels = $parts[2];
                 $value = $this->readValue($sampleKey);
                 $data['samples'][] = [
                     'name' => $meta['name'],
                     'labelNames' => [],
-                    'labelValues' => $this->decodeLabelValues($encodedLabels),
+                    'labelValues' => $this->decodeLabelValues($parsed['labels']),
                     'value' => $value,
                 ];
             }
@@ -213,28 +220,23 @@ class SwooleTableAdapter implements Adapter
             $histogramBuckets = [];
 
             foreach ($this->getSampleKeys($metaKey) as $sampleKey) {
-                $parts = explode(':', $sampleKey);
-                if (count($parts) < 4) {
+                $parsed = $this->parseSampleKey($sampleKey);
+                if ($parsed === null || !str_starts_with($parsed['suffix'], 'bucket:')) {
                     continue;
                 }
 
-                [$metricType, $metricName, $encodedLabels, $bucket] = $parts;
-                if ($metricType !== Histogram::TYPE || $metricName !== $meta['name']) {
-                    continue;
-                }
-
-                $histogramBuckets[$encodedLabels][$bucket] = $this->readValue($sampleKey);
+                $bucket = substr($parsed['suffix'], strlen('bucket:'));
+                $histogramBuckets[$parsed['labels']][$bucket] = $this->readValue($sampleKey);
             }
 
-            $labelGroups = array_keys($histogramBuckets);
-            sort($labelGroups);
+            ksort($histogramBuckets);
 
-            foreach ($labelGroups as $labelValues) {
+            foreach ($histogramBuckets as $labelIdentifier => $bucketValues) {
                 $acc = 0.0;
-                $decodedLabelValues = $this->decodeLabelValues($labelValues);
+                $decodedLabelValues = $this->decodeLabelValues($labelIdentifier);
                 foreach ($data['buckets'] as $bucket) {
                     $bucketKey = (string) $bucket;
-                    $count = $histogramBuckets[$labelValues][$bucketKey] ?? 0.0;
+                    $count = $bucketValues[$bucketKey] ?? 0.0;
                     $acc += $count;
                     $data['samples'][] = [
                         'name' => $meta['name'] . '_bucket',
@@ -251,7 +253,7 @@ class SwooleTableAdapter implements Adapter
                     'value' => $acc,
                 ];
 
-                $sum = $histogramBuckets[$labelValues]['sum'] ?? 0.0;
+                $sum = $bucketValues['sum'] ?? 0.0;
                 $data['samples'][] = [
                     'name' => $meta['name'] . '_sum',
                     'labelNames' => [],
@@ -291,12 +293,11 @@ class SwooleTableAdapter implements Adapter
             ];
 
             foreach ($this->getSampleKeys($metaKey) as $sampleKey) {
-                $parts = explode(':', $sampleKey);
-                if (count($parts) < 4) {
+                $parsed = $this->parseSampleKey($sampleKey);
+                if ($parsed === null || $parsed['suffix'] !== 'value') {
                     continue;
                 }
 
-                $encodedLabels = $parts[2];
                 $values = $this->readSummarySamples($sampleKey);
                 $values = array_filter($values, static fn(array $value): bool => (time() - $value['time']) <= $meta['maxAgeSeconds']);
 
@@ -309,7 +310,7 @@ class SwooleTableAdapter implements Adapter
                     return $left['value'] <=> $right['value'];
                 });
 
-                $decodedLabelValues = $this->decodeLabelValues($encodedLabels);
+                $decodedLabelValues = $this->decodeLabelValues($parsed['labels']);
                 foreach ($data['quantiles'] as $quantile) {
                     $data['samples'][] = [
                         'name' => $meta['name'],
@@ -535,31 +536,23 @@ class SwooleTableAdapter implements Adapter
 
     private function metaKey(array $data): string
     {
-        return implode(':', [
-            $data['type'],
-            $data['name'],
-            'meta',
-        ]);
+        return self::PREFIX_META . $this->metricIdentifier($data['type'], $data['name']);
     }
 
     private function valueKey(array $data): string
     {
-        return implode(':', [
-            $data['type'],
-            $data['name'],
-            $this->encodeLabelValues($data['labelValues']),
-            'value',
-        ]);
+        $metricId = $this->metricIdentifier($data['type'], $data['name']);
+        $labelIdentifier = $this->encodeLabelValues($data['labelValues']);
+
+        return self::PREFIX_SAMPLE . $metricId . ':' . $labelIdentifier . ':value';
     }
 
     private function histogramBucketValueKey(array $data, string $bucket): string
     {
-        return implode(':', [
-            $data['type'],
-            $data['name'],
-            $this->encodeLabelValues($data['labelValues']),
-            $bucket,
-        ]);
+        $metricId = $this->metricIdentifier($data['type'], $data['name']);
+        $labelIdentifier = $this->encodeLabelValues($data['labelValues']);
+
+        return self::PREFIX_SAMPLE . $metricId . ':' . $labelIdentifier . ':bucket:' . $bucket;
     }
 
     private function indexKey(string $type): string
@@ -569,7 +562,7 @@ class SwooleTableAdapter implements Adapter
 
     private function sampleIndexKey(string $metaKey): string
     {
-        return 'samples:' . $metaKey;
+        return self::PREFIX_SAMPLES . $this->metricIdentifierFromMetaKey($metaKey);
     }
 
     private function metaData(array $data): array
@@ -588,26 +581,67 @@ class SwooleTableAdapter implements Adapter
 
     private function encodeLabelValues(array $values): string
     {
-        $json = json_encode($values);
-        if ($json === false) {
-            throw new RuntimeException(json_last_error_msg());
+        $json = $this->encodeJson($values);
+        $hash = substr(hash('sha1', $json), 0, 16);
+        $storageKey = $this->labelStorageKey($hash);
+
+        if (!$this->stringTable->exists($storageKey)) {
+            $this->stringTable->set($storageKey, [self::COLUMN_PAYLOAD => $json]);
         }
 
-        return base64_encode($json);
+        return $hash;
     }
 
-    private function decodeLabelValues(string $values): array
+    private function decodeLabelValues(string $identifier): array
     {
-        $json = base64_decode($values, true);
-        if ($json === false) {
-            throw new RuntimeException('Cannot base64 decode label values');
+        $key = $this->labelStorageKey($identifier);
+        $row = $this->stringTable->get($key);
+        if (!is_array($row) || !array_key_exists(self::COLUMN_PAYLOAD, $row)) {
+            throw new RuntimeException('Cannot read stored label values for identifier: ' . $identifier);
         }
 
-        $decoded = json_decode($json, true);
+        $decoded = json_decode($row[self::COLUMN_PAYLOAD], true);
         if (!is_array($decoded)) {
             throw new RuntimeException(json_last_error_msg());
         }
 
         return $decoded;
+    }
+
+    private function labelStorageKey(string $hash): string
+    {
+        return self::PREFIX_LABELS . $hash;
+    }
+
+    private function metricIdentifier(string $type, string $name): string
+    {
+        return substr(hash('sha1', $type . ':' . $name), 0, 16);
+    }
+
+    private function metricIdentifierFromMetaKey(string $metaKey): string
+    {
+        if (str_starts_with($metaKey, self::PREFIX_META)) {
+            return substr($metaKey, strlen(self::PREFIX_META));
+        }
+
+        return $metaKey;
+    }
+
+    private function parseSampleKey(string $sampleKey): ?array
+    {
+        if (!str_starts_with($sampleKey, self::PREFIX_SAMPLE)) {
+            return null;
+        }
+
+        $parts = explode(':', $sampleKey, 4);
+        if (count($parts) < 4 || $parts[0] !== 'sample') {
+            return null;
+        }
+
+        return [
+            'metric' => $parts[1],
+            'labels' => $parts[2],
+            'suffix' => $parts[3],
+        ];
     }
 }

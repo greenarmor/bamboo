@@ -12,7 +12,7 @@ return [
   'workers' => ($_ENV['HTTP_WORKERS'] ?? 'auto') === 'auto'
       ? $cpuNum
       : (int) $_ENV['HTTP_WORKERS'],
-  'task_workers' => (int)($_ENV['TASK_WORKERS'] ?? 1),
+  'task_workers' => (int)($_ENV['TASK_WORKERS'] ?? 0),
   'max_requests' => (int)($_ENV['MAX_REQUESTS'] ?? 10000),
   'static_enabled' => filter_var($_ENV['STATIC_ENABLED'] ?? true, FILTER_VALIDATE_BOOLEAN),
 ];

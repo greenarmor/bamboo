@@ -36,7 +36,7 @@ final class RouterTestApplication extends Application
                 'port' => 9501,
                 'static_enabled' => false,
                 'workers' => 1,
-                'task_workers' => 1,
+                'task_workers' => 0,
                 'max_requests' => 1,
             ],
             'cache' => [
