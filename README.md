@@ -1,6 +1,36 @@
-# BAMBOO (Bootstrapable Application Microframework Built for OpenSwoole Operations)
+# BAMBOO
+**Bootstrapable Application Microservice, Built for OpenSwoole Operations**
 
-Distinct CLI, clean footprint (`etc/`, `var/`), and a **Client API layer** (PSR-18 HTTP client with retries + concurrency).
+A high-performance foundation for building PHP microservices on OpenSwoole.  
+Built for distributed systems, async jobs, and scalable service-oriented apps.
+
+## Philosophy
+
+**Bamboo** is to PHP what **Express.js** is to Node.js:  
+a simple, powerful, event-driven foundation for backend applications.
+
+### Core Principles
+1. **Stay Lightweight**  
+   - Essentials only: HTTP server, routing, middleware, CLI.  
+   - Add extras via Composer.
+
+2. **Event-Driven PHP**  
+   - Long-lived coroutine server with OpenSwoole.  
+   - No PHP-FPM overhead.
+
+3. **Express-Style DX**  
+   - Clear routing & middleware.  
+   - Dot-notation CLI (`php bin/bamboo http.serve`).
+
+4. **Async by Default**  
+   - Handle I/O without blocking.  
+   - Task workers or Redis queues for heavier jobs.
+
+5. **Composable, not Monolithic**  
+   - No forced ORM or templating.  
+   - Pick what *you* need: Eloquent, Doctrine, Twig, Redis, etc.
+
+---
 
 ## Quick start
 ```bash
