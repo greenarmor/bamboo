@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+PHP_BIN=${PHP_BIN:-php}
+COMPOSER_BIN=${COMPOSER_BIN:-composer}
+
+if [[ "${COMPOSER_BIN}" != /* ]]; then
+  if ! command -v "${COMPOSER_BIN}" >/dev/null 2>&1; then
+    echo "Unable to locate Composer executable (looked for '${COMPOSER_BIN}')." >&2
+    exit 1
+  fi
+  COMPOSER_BIN=$(command -v "${COMPOSER_BIN}")
+fi
+
+# Suppress PHP 8.4 deprecation notices emitted by Composer's bundled dependencies
+# until the upstream PHAR is updated. Compute the error reporting level dynamically
+# so the wrapper tracks future PHP changes.
+ERROR_LEVEL=$("${PHP_BIN}" -r 'echo (E_ALL & ~E_DEPRECATED);')
+exec "${PHP_BIN}" -d "error_reporting=${ERROR_LEVEL}" "${COMPOSER_BIN}" "$@"
