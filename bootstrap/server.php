@@ -18,15 +18,14 @@ $server->on('start', function() use ($host,$port){
 });
 
 $server->on('request', function(OpenSwoole\HTTP\Request $req, OpenSwoole\HTTP\Response $res) use ($app) {
+  $psr = Bamboo\Core\Helpers::toPsrRequest($req);
   try {
-    $psr = Bamboo\Core\Helpers::toPsrRequest($req);
     $response = $app->handle($psr);
-    Bamboo\Core\ResponseEmitter::emit($res, $response);
   } catch (Throwable $e) {
-    $res->status(500);
-    $res->header('Content-Type', 'application/json');
-    $res->end(json_encode(['error' => $e->getMessage()]));
+    $handler = $app->get(Bamboo\Web\ProblemDetailsHandler::class);
+    $response = $handler->handle($e, $psr);
   }
+  Bamboo\Core\ResponseEmitter::emit($res, $response);
 });
 
 $server->start();
