@@ -6,6 +6,7 @@ use Bamboo\Provider\AppProvider;
 use Bamboo\Core\Application;
 use Bamboo\Core\Config;
 use Nyholm\Psr7\Factory\Psr17Factory;
+use Nyholm\Psr7\Response;
 use Nyholm\Psr7\ServerRequest;
 use PHPUnit\Framework\TestCase;
 use Tests\Stubs\PredisFakeServer;
@@ -83,5 +84,46 @@ class ApplicationRoutesTest extends TestCase {
     $queue = PredisFakeServer::dumpQueue('jobs');
     $this->assertCount(1, $queue);
     $this->assertSame(['task' => 'demo'], json_decode($queue[0], true));
+  }
+
+  public function testClosureRouteWithSingleParameterReceivesRequest(): void {
+    $app = $this->createApp();
+    $router = $app->get('router');
+    $capturedRequest = null;
+
+    $router->get('/test/single', function(ServerRequest $request) use (&$capturedRequest) {
+      $capturedRequest = $request;
+      return new Response(200, ['Content-Type' => 'text/plain'], 'ok');
+    });
+
+    $request = new ServerRequest('GET', '/test/single');
+    $response = $app->handle($request);
+
+    $this->assertSame(200, $response->getStatusCode());
+    $this->assertInstanceOf(ServerRequest::class, $capturedRequest);
+    $this->assertSame('GET', $capturedRequest->getMethod());
+    $this->assertSame('/test/single', $capturedRequest->getUri()->getPath());
+  }
+
+  public function testClosureRouteWithTwoParametersReceivesRequestAndVars(): void {
+    $app = $this->createApp();
+    $router = $app->get('router');
+    $capturedRequest = null;
+    $capturedVars = null;
+
+    $router->get('/test/two/{value}', function(ServerRequest $request, array $vars) use (&$capturedRequest, &$capturedVars) {
+      $capturedRequest = $request;
+      $capturedVars = $vars;
+      return new Response(200, ['Content-Type' => 'application/json'], json_encode(['value' => $vars['value'] ?? null]));
+    });
+
+    $request = new ServerRequest('GET', '/test/two/demo');
+    $response = $app->handle($request);
+
+    $this->assertSame(200, $response->getStatusCode());
+    $this->assertSame('application/json', $response->getHeaderLine('Content-Type'));
+    $this->assertSame(['value' => 'demo'], json_decode((string) $response->getBody(), true));
+    $this->assertSame($request->getUri()->getPath(), $capturedRequest->getUri()->getPath());
+    $this->assertSame(['value' => 'demo'], $capturedVars);
   }
 }

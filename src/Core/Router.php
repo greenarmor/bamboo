@@ -40,15 +40,104 @@ class Router {
     return false;
   }
   public function dispatch(Request $request, Application $app) {
-    $dispatcher = simpleDispatcher(function(RouteCollector $r){ foreach ($this->routes as $m=>$map){ foreach ($map as $p=>$h){ $r->addRoute($m, $p, $h); }}});
+    $dispatcher = simpleDispatcher(function(RouteCollector $r) {
+      foreach ($this->routes as $method => $map) {
+        foreach ($map as $path => $handler) {
+          $r->addRoute($method, $path, $handler);
+        }
+      }
+    });
     $routeInfo = $dispatcher->dispatch($request->getMethod(), $request->getUri()->getPath());
     switch ($routeInfo[0]) {
       case \FastRoute\Dispatcher::NOT_FOUND: return new Response(404, ['Content-Type'=>'application/json'], json_encode(['error'=>'Not Found']));
       case \FastRoute\Dispatcher::METHOD_NOT_ALLOWED: return new Response(405, ['Content-Type'=>'application/json'], json_encode(['error'=>'Method Not Allowed']));
       case \FastRoute\Dispatcher::FOUND:
-        $handler = $routeInfo[1]; $vars = $routeInfo[2];
-        if (is_array($handler)) { [$cls,$meth] = $handler; $ctrl = new $cls($app); return $ctrl->$meth($request, $vars); }
-        return $handler($request, $vars, $app);
+        $handler = $routeInfo[1];
+        $vars = $routeInfo[2];
+        if (is_array($handler)) {
+          [$cls, $meth] = $handler;
+          $ctrl = new $cls($app);
+          return $ctrl->$meth($request, $vars);
+        }
+        $arguments = $this->resolveCallableArguments($handler, $request, $vars, $app);
+        return $handler(...$arguments);
     }
+  }
+
+  private function resolveCallableArguments(callable $handler, Request $request, array $vars, Application $app): array {
+    $reflection = $this->reflectCallable($handler);
+    $available = [
+      'request' => $request,
+      'vars' => $vars,
+      'app' => $app,
+    ];
+    $used = array_fill_keys(array_keys($available), false);
+    $arguments = [];
+
+    foreach ($reflection->getParameters() as $parameter) {
+      $value = $this->matchParameter($parameter, $available, $used);
+      if ($value === null) {
+        if ($parameter->isOptional()) continue;
+        $value = $this->nextAvailableDefault($available, $used);
+        if ($value === null) continue;
+      }
+      $arguments[] = $value;
+    }
+
+    return $arguments;
+  }
+
+  private function reflectCallable(callable $handler): \ReflectionFunctionAbstract {
+    if ($handler instanceof Closure) return new \ReflectionFunction($handler);
+    if (is_array($handler)) return new \ReflectionMethod($handler[0], $handler[1]);
+    if (is_string($handler) && str_contains($handler, '::')) return new \ReflectionMethod($handler);
+    if (is_object($handler) && method_exists($handler, '__invoke')) return new \ReflectionMethod($handler, '__invoke');
+    return new \ReflectionFunction($handler);
+  }
+
+  private function matchParameter(\ReflectionParameter $parameter, array $available, array &$used): mixed {
+    $type = $parameter->getType();
+    if ($type instanceof \ReflectionNamedType) {
+      $typeName = $type->getName();
+      if (!$type->isBuiltin()) {
+        if (!$used['request'] && is_a($available['request'], $typeName)) {
+          $used['request'] = true;
+          return $available['request'];
+        }
+        if (!$used['app'] && is_a($available['app'], $typeName)) {
+          $used['app'] = true;
+          return $available['app'];
+        }
+      } elseif ($typeName === 'array' && !$used['vars']) {
+        $used['vars'] = true;
+        return $available['vars'];
+      }
+    }
+
+    $name = strtolower($parameter->getName());
+    $aliases = [
+      'request' => ['request', 'req', 'serverrequest', 'serverrequestinterface'],
+      'vars' => ['vars', 'args', 'arguments', 'params', 'parameters'],
+      'app' => ['app', 'application'],
+    ];
+
+    foreach ($aliases as $key => $options) {
+      if (in_array($name, $options, true) && !$used[$key]) {
+        $used[$key] = true;
+        return $available[$key];
+      }
+    }
+
+    return null;
+  }
+
+  private function nextAvailableDefault(array $available, array &$used): mixed {
+    foreach (['request', 'vars', 'app'] as $key) {
+      if (!$used[$key]) {
+        $used[$key] = true;
+        return $available[$key];
+      }
+    }
+    return null;
   }
 }
