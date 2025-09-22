@@ -34,7 +34,7 @@ final class CoverageThresholdExtension implements ExtensionContract, ExecutionFi
         $this->classThreshold = $this->floatParameter($parameters, 'class');
 
         $runtime = new Runtime();
-        $this->canCollectCoverage = $runtime->hasPCOV() || $runtime->hasXdebug();
+        $this->canCollectCoverage = $runtime->canCollectCodeCoverage();
 
         if ($this->canCollectCoverage) {
             CodeCoverageFilterRegistry::instance()->init($configuration, true);
