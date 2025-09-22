@@ -227,7 +227,7 @@ class ApplicationPipelineTest extends TestCase {
     @unlink($temp);
   }
 
-  public function testKernelReusesMiddlewareCacheForUnmatchedRoutes(): void {
+  public function testKernelCachesSingleEntryForUnmatchedRoutes(): void {
     $config = $this->baseConfig([
       'global' => ['alpha'],
       'groups' => [],
@@ -250,8 +250,7 @@ class ApplicationPipelineTest extends TestCase {
     $this->assertSame('GET /missing-one', $contextAfterFirst->get('route'));
 
     $firstCache = $ref->getValue($kernel);
-    $this->assertArrayHasKey('__global__', $firstCache);
-    $this->assertCount(1, $firstCache);
+    $this->assertSame(['__global__'], array_keys($firstCache));
 
     $responseTwo = $app->handle(new ServerRequest('GET', '/missing-two'));
     $this->assertSame(404, $responseTwo->getStatusCode());
@@ -260,9 +259,8 @@ class ApplicationPipelineTest extends TestCase {
     $this->assertSame('GET /missing-two', $contextAfterSecond->get('route'));
 
     $secondCache = $ref->getValue($kernel);
-    $this->assertCount(1, $secondCache);
-    $this->assertArrayHasKey('__global__', $secondCache);
-    $this->assertSame($firstCache['__global__'], $secondCache['__global__']);
+    $this->assertSame(['__global__'], array_keys($secondCache));
+    $this->assertSame($firstCache, $secondCache);
 
     $this->assertSame([
       'alpha:before',
