@@ -4,10 +4,12 @@ namespace Tests\Stubs;
 final class OpenSwooleHook
 {
     public static array $sleeps = [];
+    public static array $microSleeps = [];
 
     public static function reset(): void
     {
         self::$sleeps = [];
+        self::$microSleeps = [];
     }
 }
 
@@ -24,9 +26,26 @@ if (!class_exists(__NAMESPACE__ . '\\Coroutine')) {
             $fn();
         }
 
+        public static function run(callable $fn): bool
+        {
+            $fn();
+
+            return true;
+        }
+
+        public static function getCid(): int
+        {
+            return -1;
+        }
+
         public static function sleep(float $seconds): void
         {
             \Tests\Stubs\OpenSwooleHook::$sleeps[] = $seconds;
+        }
+
+        public static function usleep(int $microseconds): void
+        {
+            \Tests\Stubs\OpenSwooleHook::$microSleeps[] = $microseconds;
         }
     }
 }
