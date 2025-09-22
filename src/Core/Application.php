@@ -54,17 +54,33 @@ class Application extends Container {
 
     $kernel = $this->get(Kernel::class);
     $middleware = $kernel->forRoute($kernelCacheKey, $routeMiddleware);
+    $terminators = [];
     $runner = array_reduce(
       array_reverse($middleware),
-      function(callable $next, string $middlewareClass) {
-        return function(Request $request) use ($middlewareClass, $next) {
+      function(callable $next, string $middlewareClass) use (&$terminators) {
+        return function(Request $request) use ($middlewareClass, $next, &$terminators) {
           $instance = $this->instantiateMiddleware($middlewareClass);
-          return $instance->handle($request, $next);
+          $isTerminable = is_callable([$instance, 'terminate']);
+          $requestForTerminate = $request;
+          $response = $instance->handle($request, function(Request $nextRequest) use ($next, $isTerminable, &$requestForTerminate) {
+            if ($isTerminable) {
+              $requestForTerminate = $nextRequest;
+            }
+            return $next($nextRequest);
+          });
+          if ($isTerminable) {
+            $terminators[] = [$instance, $requestForTerminate];
+          }
+          return $response;
         };
       },
       fn(Request $request) => $router->toResponse($match, $request, $this)
     );
-    return $runner($request);
+    $response = $runner($request);
+    foreach ($terminators as [$instance, $terminatorRequest]) {
+      $instance->terminate($terminatorRequest, $response);
+    }
+    return $response;
   }
   protected function instantiateMiddleware(string $middleware): object {
     if (!class_exists($middleware)) {

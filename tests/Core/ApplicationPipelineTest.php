@@ -11,6 +11,7 @@ use Bamboo\Web\RequestContext;
 use Nyholm\Psr7\Response;
 use Nyholm\Psr7\ServerRequest;
 use PHPUnit\Framework\TestCase;
+use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface as Request;
 
 class PipelineRecorder {
@@ -52,6 +53,43 @@ class DeltaMiddleware {
     $response = $next($request->withAttribute('delta', true));
     PipelineRecorder::$events[] = 'delta:after';
     return $response->withHeader('X-Delta', '1');
+  }
+}
+
+class TerminableAlphaMiddleware {
+  public function handle(Request $request, \Closure $next) {
+    PipelineRecorder::$events[] = 'terminable-alpha:before';
+    $request = $request->withAttribute('terminable-alpha', 'set');
+    $response = $next($request);
+    PipelineRecorder::$events[] = 'terminable-alpha:after';
+    return $response->withHeader('X-Term-Alpha', 'A');
+  }
+
+  public function terminate(Request $request, ResponseInterface $response): void {
+    PipelineRecorder::$events[] = sprintf(
+      'terminable-alpha:terminate request=%s response=%s',
+      $request->getAttribute('terminable-alpha'),
+      $response->getHeaderLine('X-Term-Beta')
+    );
+  }
+}
+
+class TerminableBetaMiddleware {
+  public function handle(Request $request, \Closure $next) {
+    PipelineRecorder::$events[] = 'terminable-beta:before';
+    $request = $request->withAttribute('terminable-beta', 'set');
+    $response = $next($request);
+    PipelineRecorder::$events[] = 'terminable-beta:after';
+    return $response->withHeader('X-Term-Beta', 'B');
+  }
+
+  public function terminate(Request $request, ResponseInterface $response): void {
+    PipelineRecorder::$events[] = sprintf(
+      'terminable-beta:terminate request-alpha=%s request-beta=%s response=%s',
+      $request->getAttribute('terminable-alpha'),
+      $request->getAttribute('terminable-beta'),
+      $response->getHeaderLine('X-Term-Alpha')
+    );
   }
 }
 
@@ -316,6 +354,48 @@ class ApplicationPipelineTest extends TestCase {
       'alpha:after',
       'alpha:before',
       'alpha:after',
+    ], PipelineRecorder::$events);
+  }
+
+  public function testTerminableMiddlewareRunsAfterResponseIsProduced(): void {
+    $middleware = [
+      'global' => ['terminable-alpha'],
+      'groups' => [],
+      'aliases' => [
+        'terminable-alpha' => TerminableAlphaMiddleware::class,
+        'terminable-beta' => TerminableBetaMiddleware::class,
+      ],
+    ];
+
+    $config = $this->baseConfig($middleware);
+    $app = $this->createApp($config);
+
+    $app->get('router')->get('/terminate', RouteDefinition::forHandler(
+      function(Request $request) {
+        PipelineRecorder::$events[] = sprintf(
+          'handler:alpha=%s beta=%s',
+          $request->getAttribute('terminable-alpha'),
+          $request->getAttribute('terminable-beta')
+        );
+        return (new Response(200, [], 'ok'))->withHeader('X-Final', '1');
+      },
+      middleware: ['terminable-beta']
+    ));
+
+    $response = $app->handle(new ServerRequest('GET', '/terminate'));
+
+    $this->assertSame('A', $response->getHeaderLine('X-Term-Alpha'));
+    $this->assertSame('B', $response->getHeaderLine('X-Term-Beta'));
+    $this->assertSame('1', $response->getHeaderLine('X-Final'));
+
+    $this->assertSame([
+      'terminable-alpha:before',
+      'terminable-beta:before',
+      'handler:alpha=set beta=set',
+      'terminable-beta:after',
+      'terminable-alpha:after',
+      'terminable-beta:terminate request-alpha=set request-beta=set response=A',
+      'terminable-alpha:terminate request=set response=B',
     ], PipelineRecorder::$events);
   }
 }
