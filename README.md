@@ -81,9 +81,34 @@ HTTP calls. Individual commands implement the expected behaviors, such as
 starting the HTTP server, dumping or caching routes, purging runtime
 caches, and generating a base64 application key if one is missing.
 
-Operational helpers cover Redis queue workers, WebSocket echo servers, an
-inotify-based dev watcher, a scheduler tick for cron, Composer package
+Operational helpers cover Redis queue workers, WebSocket echo servers, a
+PHP-based dev watcher, a scheduler tick for cron, Composer package
 introspection, and PSR-18 client smoke tests.
+
+#### Development watcher
+
+`dev.watch` now supervises `http.serve` through Symfony's Process
+component while an event loop monitors project files. The watcher prefers
+`ext-inotify` when available and falls back to a portable Finder-powered
+polling driver. Each restart is logged through the shared Monolog
+instance and the child process is signalled and awaited to keep OpenSwoole
+shutdowns graceful.
+
+The command accepts optional flags for custom workflows:
+
+* `--debounce=<ms>` – Milliseconds to wait after the last detected change
+  before restarting (defaults to 500ms).
+* `--watch=<paths>` – Comma separated list of directories or files to
+  monitor. The default covers `src/`, `etc/`, `routes/`, `bootstrap/`,
+  and `public/`.
+* `--command=<cmd>` – Override the supervised command. This is helpful
+  when wiring in alternate HTTP stacks or scripted setups.
+
+Example usage:
+
+```
+php bin/bamboo dev.watch --debounce=250 --watch=src,etc,routes --command="php bin/bamboo http.serve"
+```
 
 ### HTTP client & integration layer
 
@@ -102,8 +127,8 @@ to push jobs and the `queue.work` command to `BLPOP` and stream payloads
 from the same queue. WebSocket support is provisioned through
 `ws.serve`, which reads its host/port from `etc/ws.php` and spins up an
 OpenSwoole echo server with lifecycle logging. Developer productivity
-tools include the `dev.watch` inotify loop and a timestamped scheduler
-tick.
+tools include the event-loop driven `dev.watch` command and a timestamped
+scheduler tick.
 
 ### Configuration, logging & docs
 
