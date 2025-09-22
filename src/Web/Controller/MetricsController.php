@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Bamboo\Web\Controller;
 
+use Bamboo\Core\Application;
 use Nyholm\Psr7\Response;
 use Prometheus\CollectorRegistry;
 use Prometheus\Exception\StorageException;
@@ -12,14 +13,28 @@ use Psr\Http\Message\ResponseInterface;
 
 class MetricsController
 {
-    public function __construct(private CollectorRegistry $registry, private RenderTextFormat $renderer)
+    public function __construct(private Application $app)
     {
     }
 
     public function index(): ResponseInterface
     {
+        if (!$this->app->has(CollectorRegistry::class) || !$this->app->has(RenderTextFormat::class)) {
+            return new Response(
+                503,
+                ['Content-Type' => 'text/plain; charset=utf-8'],
+                "metrics collection unavailable: dependencies missing\n"
+            );
+        }
+
+        /** @var CollectorRegistry $registry */
+        $registry = $this->app->get(CollectorRegistry::class);
+
+        /** @var RenderTextFormat $renderer */
+        $renderer = $this->app->get(RenderTextFormat::class);
+
         try {
-            $metrics = $this->registry->getMetricFamilySamples();
+            $metrics = $registry->getMetricFamilySamples();
         } catch (StorageException $exception) {
             return new Response(
                 503,
@@ -28,7 +43,7 @@ class MetricsController
             );
         }
 
-        $body = $this->renderer->render($metrics);
+        $body = $renderer->render($metrics);
 
         return new Response(
             200,

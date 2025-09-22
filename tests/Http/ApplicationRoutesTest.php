@@ -9,6 +9,7 @@ use Bamboo\Core\Config;
 use Nyholm\Psr7\Factory\Psr17Factory;
 use Nyholm\Psr7\Response;
 use Nyholm\Psr7\ServerRequest;
+use Prometheus\RenderTextFormat;
 use PHPUnit\Framework\TestCase;
 use Tests\Stubs\PredisFakeServer;
 use Tests\Stubs\PredisMemoryConnection;
@@ -127,5 +128,18 @@ class ApplicationRoutesTest extends TestCase {
     $this->assertSame(['value' => 'demo'], json_decode((string) $response->getBody(), true));
     $this->assertSame($request->getUri()->getPath(), $capturedRequest->getUri()->getPath());
     $this->assertSame(['value' => 'demo'], $capturedVars);
+  }
+
+  public function testMetricsRouteRendersPrometheusTextFormat(): void {
+    $app = $this->createApp();
+    $response = $app->handle(new ServerRequest('GET', '/metrics'));
+
+    $this->assertSame(200, $response->getStatusCode());
+    $this->assertSame(RenderTextFormat::MIME_TYPE, $response->getHeaderLine('Content-Type'));
+
+    $body = (string) $response->getBody();
+    $this->assertNotSame('', $body);
+    $this->assertStringContainsString('# HELP bamboo_http_requests_in_flight', $body);
+    $this->assertStringContainsString('bamboo_http_requests_in_flight', $body);
   }
 }
