@@ -171,6 +171,41 @@ class ApplicationPipelineTest extends TestCase {
     $this->assertSame($cached, $ref->getValue($kernel), 'Route middleware cache should be reused across requests.');
   }
 
+  public function testUnmatchedRoutesShareKernelCacheEntry(): void {
+    $middleware = [
+      'global' => ['alpha'],
+      'groups' => [],
+      'aliases' => [
+        'alpha' => AlphaMiddleware::class,
+      ],
+    ];
+
+    $config = $this->baseConfig($middleware);
+    $app = $this->createApp($config);
+
+    $kernel = $app->get(Kernel::class);
+    $ref = new \ReflectionProperty($kernel, 'resolved');
+    $ref->setAccessible(true);
+
+    $firstResponse = $app->handle(new ServerRequest('GET', '/missing-one'));
+    $this->assertSame(404, $firstResponse->getStatusCode());
+
+    $cached = $ref->getValue($kernel);
+    $this->assertArrayHasKey('__global__', $cached);
+    $this->assertCount(1, $cached);
+
+    $secondResponse = $app->handle(new ServerRequest('GET', '/missing-two'));
+    $this->assertSame(404, $secondResponse->getStatusCode());
+
+    $this->assertSame($cached, $ref->getValue($kernel));
+    $this->assertSame([
+      'alpha:before',
+      'alpha:after',
+      'alpha:before',
+      'alpha:after',
+    ], PipelineRecorder::$events);
+  }
+
   public function testKernelCacheInvalidatesWhenConfigurationChanges(): void {
     $config = $this->baseConfig([
       'global' => ['alpha'],

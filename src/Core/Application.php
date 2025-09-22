@@ -39,9 +39,11 @@ class Application extends Container {
 
     $definition = $match['route'] ?? null;
     $routeMiddleware = [];
-    $kernelCacheKey = '__global__';
+    $kernelCacheKey = $defaultSignature;
 
-    if (is_array($definition)) {
+    if ($definition === null) {
+      $kernelCacheKey = '__global__';
+    } elseif (is_array($definition)) {
       $routeMiddleware = $definition['middleware'] ?? [];
       $routeSignature = $definition['signature'] ?? $defaultSignature;
       $context->merge(['route' => $routeSignature]);
