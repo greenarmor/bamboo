@@ -1,12 +1,15 @@
 <?php
 namespace Bamboo\Core;
 
+use Bamboo\Web\Kernel;
+use Bamboo\Web\RequestContext;
 use Psr\Http\Message\ServerRequestInterface as Request;
 
 class Application extends Container {
   public function __construct(protected Config $config) {
     $this->singleton(Config::class, fn() => $config);
-    $this->bind('router', fn() => new Router());
+    $this->singleton('router', fn() => new Router());
+    $this->bind(Kernel::class, fn() => new Kernel());
     $this->bootRoutes();
   }
   public function config(?string $key = null, $default = null) { return $this->get(Config::class)->get($key, $default); }
@@ -22,7 +25,50 @@ class Application extends Container {
     }
     require dirname(__DIR__,2).'/routes/http.php';
   }
-  public function handle(Request $request) { return $this->get('router')->dispatch($request, $this); }
+  public function handle(Request $request) {
+    $context = new RequestContext();
+    $context->merge([
+      'method' => $request->getMethod(),
+      'route' => sprintf('%s %s', $request->getMethod(), $request->getRequestTarget()),
+    ]);
+    $this->instances[RequestContext::class] = $context;
+    $this->instances['request.context'] = $context;
+    $kernel = $this->get(Kernel::class);
+    $middleware = $kernel->middleware;
+    $runner = array_reduce(
+      array_reverse($middleware),
+      function(callable $next, string $middlewareClass) {
+        return function(Request $request) use ($middlewareClass, $next) {
+          $instance = $this->instantiateMiddleware($middlewareClass);
+          return $instance->handle($request, $next);
+        };
+      },
+      fn(Request $request) => $this->get('router')->dispatch($request, $this)
+    );
+    return $runner($request);
+  }
+  protected function instantiateMiddleware(string $middleware): object {
+    if (!class_exists($middleware)) {
+      throw new \InvalidArgumentException("Middleware {$middleware} not found");
+    }
+    $ref = new \ReflectionClass($middleware);
+    $ctor = $ref->getConstructor();
+    if (!$ctor || $ctor->getNumberOfRequiredParameters() === 0) {
+      return new $middleware();
+    }
+    $args = [];
+    foreach ($ctor->getParameters() as $param) {
+      $type = $param->getType();
+      if ($type instanceof \ReflectionNamedType && !$type->isBuiltin()) {
+        $name = $type->getName();
+        if (is_a($this, $name)) { $args[] = $this; continue; }
+        if ($this->has($name)) { $args[] = $this->get($name); continue; }
+      }
+      if ($param->isDefaultValueAvailable()) { $args[] = $param->getDefaultValue(); continue; }
+      throw new \RuntimeException("Unable to resolve dependency for {$middleware}::{$param->getName()}");
+    }
+    return $ref->newInstanceArgs($args);
+  }
   public function register($provider): void { $provider->register($this); }
   public function bootEloquent(): void {
     $db = $this->config('database');
