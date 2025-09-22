@@ -61,13 +61,11 @@ class DevWatch extends Command
         ]);
 
         $factory = $this->createProcessFactory($options['command']);
-        $supervisor = new DevWatchSupervisor(
+        $supervisor = $this->createSupervisor(
             $watcher,
             $factory,
             $logger,
-            $options['debounce'] / 1000,
-            null,
-            self::DEFAULT_POLL_INTERVAL_US
+            $options['debounce'] / 1000
         );
 
         $this->registerSignalHandlers($supervisor, $logger);
@@ -77,7 +75,7 @@ class DevWatch extends Command
         return 0;
     }
 
-    private function parseOptions(array $args): array
+    protected function parseOptions(array $args): array
     {
         $options = [
             'debounce' => self::DEFAULT_DEBOUNCE_MS,
@@ -160,7 +158,7 @@ class DevWatch extends Command
         return $options;
     }
 
-    private function printHelp(): void
+    protected function printHelp(): void
     {
         $help = <<<HELP
 Usage: php bin/bamboo dev.watch [options]
@@ -181,7 +179,7 @@ HELP;
         echo str_replace('{self::DEFAULT_DEBOUNCE_MS}', (string) self::DEFAULT_DEBOUNCE_MS, $help), "\n";
     }
 
-    private function normalizeDebounce(?string $value): int
+    protected function normalizeDebounce(?string $value): int
     {
         if ($value === null || $value === '') {
             return self::DEFAULT_DEBOUNCE_MS;
@@ -195,14 +193,14 @@ HELP;
         return $numeric;
     }
 
-    private function parseWatchList(string $value): array
+    protected function parseWatchList(string $value): array
     {
         $parts = array_map('trim', explode(',', $value));
         $parts = array_filter($parts, fn(string $part) => $part !== '');
         return array_values(array_unique($parts));
     }
 
-    private function resolveLogger(): LoggerInterface
+    protected function resolveLogger(): LoggerInterface
     {
         $logger = $this->app->get('log');
         if (!$logger instanceof LoggerInterface) {
@@ -212,7 +210,7 @@ HELP;
         return $logger;
     }
 
-    private function resolveWatchPaths(array $paths, LoggerInterface $logger): array
+    protected function resolveWatchPaths(array $paths, LoggerInterface $logger): array
     {
         $base = $this->basePath();
         $resolved = [];
@@ -242,7 +240,7 @@ HELP;
         return $resolved;
     }
 
-    private function normalizePath(string $path, string $base): string
+    protected function normalizePath(string $path, string $base): string
     {
         if ($path === '') {
             return $base;
@@ -255,7 +253,7 @@ HELP;
         return rtrim($base, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . $path;
     }
 
-    private function isAbsolutePath(string $path): bool
+    protected function isAbsolutePath(string $path): bool
     {
         if ($path === '') {
             return false;
@@ -268,19 +266,19 @@ HELP;
         return (bool) preg_match('/^[A-Za-z]:\\\\/', $path);
     }
 
-    private function basePath(): string
+    protected function basePath(): string
     {
         return getcwd() ?: dirname(__DIR__, 3);
     }
 
-    private function defaultCommand(): string
+    protected function defaultCommand(): string
     {
         $binary = escapeshellarg(PHP_BINARY);
         $cli = escapeshellarg($this->normalizePath('bin/bamboo', $this->basePath()));
         return sprintf('%s %s http.serve', $binary, $cli);
     }
 
-    private function createProcessFactory(string $command): callable
+    protected function createProcessFactory(string $command): callable
     {
         $cwd = $this->basePath();
 
@@ -292,7 +290,7 @@ HELP;
         };
     }
 
-    private function createWatcher(array $paths, LoggerInterface $logger): FileWatcher
+    protected function createWatcher(array $paths, LoggerInterface $logger): FileWatcher
     {
         if (extension_loaded('inotify')) {
             try {
@@ -305,7 +303,7 @@ HELP;
         return new FinderFileWatcher($paths);
     }
 
-    private function registerSignalHandlers(DevWatchSupervisor $supervisor, LoggerInterface $logger): void
+    protected function registerSignalHandlers(DevWatchSupervisor $supervisor, LoggerInterface $logger): void
     {
         if (!function_exists('pcntl_signal') || !function_exists('pcntl_async_signals')) {
             return;
@@ -319,5 +317,21 @@ HELP;
 
         pcntl_signal(SIGINT, $handler);
         pcntl_signal(SIGTERM, $handler);
+    }
+
+    protected function createSupervisor(
+        FileWatcher $watcher,
+        callable $factory,
+        LoggerInterface $logger,
+        float $debounceSeconds
+    ): DevWatchSupervisor {
+        return new DevWatchSupervisor(
+            $watcher,
+            $factory,
+            $logger,
+            $debounceSeconds,
+            null,
+            self::DEFAULT_POLL_INTERVAL_US
+        );
     }
 }

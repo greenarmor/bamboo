@@ -26,6 +26,14 @@ class AppProvider {
       });
       return $log;
     });
+    $app->singleton('redis.client.factory', function() use ($app) {
+      return function(array $overrides = []) use ($app) {
+        $config = array_replace($app->config('redis') ?? [], $overrides);
+        $url = $config['url'] ?? 'tcp://127.0.0.1:6379';
+        $options = $config['options'] ?? [];
+        return new \Predis\Client($url, $options);
+      };
+    });
     // HTTP Client facade
     $app->singleton(\Bamboo\Http\Client::class, fn() => new \Bamboo\Http\Client($app));
     $app->bind('http.client', fn() => $app->get(\Bamboo\Http\Client::class));

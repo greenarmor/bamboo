@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Web;
+namespace Tests\Http;
 
 use Bamboo\Web\ProblemDetailsHandler;
 use Nyholm\Psr7\ServerRequest;

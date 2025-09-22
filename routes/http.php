@@ -34,7 +34,8 @@ $router->get('/api/httpbin', function() {
 // Queue enqueue
 $router->post('/api/jobs', function($request) {
   $cfg = $this->get(Bamboo\Core\Config::class)->get('redis');
-  $r = new Predis\Client($cfg['url']);
+  $factory = $this->get('redis.client.factory');
+  $r = $factory();
   $payload = (string)$request->getBody();
   $r->rpush($cfg['queue'], [$payload ?: json_encode(['job'=>'noop'])]);
   return new Nyholm\Psr7\Response(202, ['Content-Type'=>'application/json'], json_encode(['queued'=>true]));

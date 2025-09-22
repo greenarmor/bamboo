@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Web;
+namespace Tests\Http;
 
 use Bamboo\Core\Application;
 use Bamboo\Core\Config;

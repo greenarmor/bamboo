@@ -1,5 +1,17 @@
 <?xml version="1.0"?>
-<phpunit bootstrap="vendor/autoload.php" colors="true">
+<phpunit bootstrap="tests/bootstrap.php" colors="true" failOnEmptyTestSuite="true">
+  <extensions>
+    <bootstrap class="Tests\Support\CoverageThresholdExtension">
+      <parameter name="line" value="80"/>
+      <parameter name="function" value="80"/>
+      <parameter name="class" value="80"/>
+    </bootstrap>
+  </extensions>
+  <source>
+    <include>
+      <directory suffix=".php">src</directory>
+    </include>
+  </source>
   <testsuites>
     <testsuite name="Bamboo Test Suite">
       <directory suffix="Test.php">tests</directory>
