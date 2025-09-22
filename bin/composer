@@ -4,12 +4,32 @@ set -euo pipefail
 PHP_BIN=${PHP_BIN:-php}
 COMPOSER_BIN=${COMPOSER_BIN:-composer}
 
+WRAPPER_PATH=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/$(basename "${BASH_SOURCE[0]}")
+
 if [[ "${COMPOSER_BIN}" != /* ]]; then
-  if ! command -v "${COMPOSER_BIN}" >/dev/null 2>&1; then
-    echo "Unable to locate Composer executable (looked for '${COMPOSER_BIN}')." >&2
-    exit 1
+  if [[ "${COMPOSER_BIN}" == "composer" ]]; then
+    IFS=':' read -r -a __bamboo_path_dirs <<< "${PATH}"
+    RESOLVED_COMPOSER=""
+    for __bamboo_dir in "${__bamboo_path_dirs[@]}"; do
+      [[ -z "${__bamboo_dir}" ]] && __bamboo_dir='.'
+      CANDIDATE="${__bamboo_dir%/}/${COMPOSER_BIN}"
+      if [[ -x "${CANDIDATE}" && "${CANDIDATE}" != "${WRAPPER_PATH}" ]]; then
+        RESOLVED_COMPOSER="${CANDIDATE}"
+        break
+      fi
+    done
+    if [[ -z "${RESOLVED_COMPOSER}" ]]; then
+      echo "Unable to locate Composer executable (searched PATH entries excluding the wrapper)." >&2
+      exit 1
+    fi
+    COMPOSER_BIN="${RESOLVED_COMPOSER}"
+  else
+    if ! command -v "${COMPOSER_BIN}" >/dev/null 2>&1; then
+      echo "Unable to locate Composer executable (looked for '${COMPOSER_BIN}')." >&2
+      exit 1
+    fi
+    COMPOSER_BIN=$(command -v "${COMPOSER_BIN}")
   fi
-  COMPOSER_BIN=$(command -v "${COMPOSER_BIN}")
 fi
 
 # Suppress PHP 8.4 deprecation notices emitted by Composer's bundled dependencies

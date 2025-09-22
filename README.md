@@ -4,7 +4,8 @@ Distinct CLI, clean footprint (`etc/`, `var/`), and a **Client API layer** (PSR-
 
 ## Quick start
 ```bash
-./bin/composer install
+eval "$(./bootstrap/shell-init.sh)"  # ensure `composer` resolves to the local wrapper
+composer install
 cp .env.example .env
 php bin/bamboo app.key.make
 php bin/bamboo http.serve
@@ -45,17 +46,19 @@ queue.work, ws.serve, dev.watch, schedule.run, pkg.info, client.call
 
 ### Local developer workflow
 
-Install the dev dependencies with the bundled Composer wrapper (it suppresses
-PHP 8.4 deprecation noise until the upstream Composer PHAR removes deprecated
-error-level constants). OpenSwoole must be available locally, or invoke the
-wrapper with `--ignore-platform-req=ext-openswoole` for read-only operations.
-Once dependencies are installed, use the provided Composer scripts:
+Run `eval "$(./bootstrap/shell-init.sh)"` once per shell session to prepend the
+repository's `bin/` directory to `PATH`. That ensures any `composer` invocation
+uses the bundled wrapper, which filters PHP 8.4 deprecation noise until the
+upstream Composer PHAR removes deprecated error-level constants. OpenSwoole must
+be available locally, or append `--ignore-platform-req=ext-openswoole` for
+read-only operations. Once dependencies are installed, use the provided
+Composer scripts:
 
 ```bash
-./bin/composer validate --strict   # verify composer.json/composer.lock structure
-./bin/composer lint                # run PHP CS Fixer in dry-run mode
-./bin/composer stan                # execute PHPStan (level 8, baseline enforced)
-./bin/composer test                # run the full PHPUnit suite
+composer validate --strict   # verify composer.json/composer.lock structure
+composer lint                # run PHP CS Fixer in dry-run mode
+composer stan                # execute PHPStan (level 8, baseline enforced)
+composer test                # run the full PHPUnit suite
 ```
 
 The PHPStan baseline (`phpstan-baseline.neon`) captures existing
