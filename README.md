@@ -103,11 +103,14 @@ The command accepts optional flags for custom workflows:
   and `public/`.
 * `--command=<cmd>` – Override the supervised command. This is helpful
   when wiring in alternate HTTP stacks or scripted setups.
+* `--` – Pass the remaining arguments verbatim as the command to run,
+  which makes it easier to forward flags to the child process.
 
 Example usage:
 
 ```
 php bin/bamboo dev.watch --debounce=250 --watch=src,etc,routes --command="php bin/bamboo http.serve"
+php bin/bamboo dev.watch -- php bin/bamboo http.serve --debug
 ```
 
 ### HTTP client & integration layer

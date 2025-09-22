@@ -88,6 +88,10 @@ class DevWatch extends Command
         for ($i = 0; $i < count($args); $i++) {
             $arg = $args[$i];
             if ($arg === '--') {
+                $remaining = array_slice($args, $i + 1);
+                if ($remaining) {
+                    $options['command'] = implode(' ', $remaining);
+                }
                 break;
             }
 
@@ -165,12 +169,14 @@ Options:
   --debounce=<ms>        Debounce interval in milliseconds (default: {self::DEFAULT_DEBOUNCE_MS}).
   --watch=<paths>        Comma-separated list of directories or files to watch.
   --command=<cmd>        Custom command to run instead of http.serve.
+  --                     Treat all subsequent arguments as the command to run.
   --help                 Display this help text.
 
 Examples:
   php bin/bamboo dev.watch
   php bin/bamboo dev.watch --debounce=250
   php bin/bamboo dev.watch --watch=src,etc,routes --command="php artisan serve"
+  php bin/bamboo dev.watch -- php bin/bamboo http.serve --debug
 HELP;
         echo str_replace('{self::DEFAULT_DEBOUNCE_MS}', (string) self::DEFAULT_DEBOUNCE_MS, $help), "\n";
     }

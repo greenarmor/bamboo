@@ -1,6 +1,7 @@
 <?php
 namespace Tests\Console;
 
+use Bamboo\Console\Command\DevWatch;
 use Bamboo\Console\Command\DevWatch\DevWatchSupervisor;
 use Bamboo\Console\Command\DevWatch\FinderFileWatcher;
 use Monolog\Handler\TestHandler;
@@ -63,6 +64,23 @@ class DevWatchTest extends TestCase
 
         self::assertGreaterThan(0, $supervisor->getRestartCount(), 'Expected the supervisor to restart the process.');
         self::assertTrue($handler->hasInfoThatContains('Restarting HTTP server'));
+    }
+
+    public function testCommandOverridesAfterDoubleDash(): void
+    {
+        $reflector = new \ReflectionClass(DevWatch::class);
+        $command = $reflector->newInstanceWithoutConstructor();
+
+        $method = $reflector->getMethod('parseOptions');
+        $method->setAccessible(true);
+
+        $defaults = $method->invoke($command, []);
+        self::assertIsArray($defaults);
+
+        $options = $method->invoke($command, ['--', 'php', 'bin/bamboo', 'http.serve', '--debug']);
+
+        self::assertSame('php bin/bamboo http.serve --debug', $options['command']);
+        self::assertNotSame($defaults['command'], $options['command']);
     }
 
     private function cleanupDirectory(string $path): void
