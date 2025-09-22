@@ -13,6 +13,7 @@ class Config {
       'database'=> file_exists($this->dir . '/database.php') ? require $this->dir . '/database.php' : [],
       'ws'      => require $this->dir . '/ws.php',
       'http'    => require $this->dir . '/http.php',
+      'middleware' => file_exists($this->dir . '/middleware.php') ? require $this->dir . '/middleware.php' : [],
     ];
   }
 

@@ -9,7 +9,7 @@ class Application extends Container {
   public function __construct(protected Config $config) {
     $this->singleton(Config::class, fn() => $config);
     $this->singleton('router', fn() => new Router());
-    $this->bind(Kernel::class, fn() => new Kernel());
+    $this->singleton(Kernel::class, fn() => new Kernel($this->get(Config::class)));
     $this->bootRoutes();
   }
   public function config(?string $key = null, $default = null) { return $this->get(Config::class)->get($key, $default); }
@@ -19,7 +19,7 @@ class Application extends Container {
     if ($cache && file_exists($cache)) {
       $map = require $cache;
       foreach ($map as $method => $paths) {
-        foreach ($paths as $path => $handler) { $router->{strtolower($method)}($path, $handler); }
+        foreach ($paths as $path => $definition) { $router->addRoute($method, $path, $definition); }
       }
       return;
     }
@@ -29,12 +29,17 @@ class Application extends Container {
     $context = new RequestContext();
     $context->merge([
       'method' => $request->getMethod(),
-      'route' => sprintf('%s %s', $request->getMethod(), $request->getRequestTarget()),
     ]);
     $this->instances[RequestContext::class] = $context;
     $this->instances['request.context'] = $context;
+    $router = $this->get('router');
+    $match = $router->match($request);
+    $definition = $match['route'] ?? null;
+    $routeSignature = $definition['signature'] ?? sprintf('%s %s', $request->getMethod(), $request->getUri()->getPath());
+    $routeMiddleware = $definition['middleware'] ?? [];
+    $context->merge(['route' => $routeSignature]);
     $kernel = $this->get(Kernel::class);
-    $middleware = $kernel->middleware;
+    $middleware = $kernel->forRoute($routeSignature, $routeMiddleware);
     $runner = array_reduce(
       array_reverse($middleware),
       function(callable $next, string $middlewareClass) {
@@ -43,7 +48,7 @@ class Application extends Container {
           return $instance->handle($request, $next);
         };
       },
-      fn(Request $request) => $this->get('router')->dispatch($request, $this)
+      fn(Request $request) => $router->toResponse($match, $request, $this)
     );
     return $runner($request);
   }

@@ -15,5 +15,12 @@ declare(strict_types=1);
  *     aliases?: array<string, string>
  * }
  */
-return [];
+return [
+    'global' => [
+        Bamboo\Web\Middleware\RequestId::class,
+        Bamboo\Web\Middleware\SignatureHeader::class,
+    ],
+    'groups' => [],
+    'aliases' => [],
+];
 

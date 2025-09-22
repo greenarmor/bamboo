@@ -25,8 +25,20 @@ class RouterCacheTest extends TestCase {
     $router->cacheTo($cacheFile);
     $this->assertFileExists($cacheFile);
     $this->assertSame([
-      'GET' => ['/users' => [DummyController::class, 'index']],
-      'POST'=> ['/users' => [DummyController::class, 'store']],
+      'GET' => [
+        '/users' => [
+          'handler' => [DummyController::class, 'index'],
+          'middleware' => [],
+          'signature' => 'GET /users',
+        ],
+      ],
+      'POST'=> [
+        '/users' => [
+          'handler' => [DummyController::class, 'store'],
+          'middleware' => [],
+          'signature' => 'POST /users',
+        ],
+      ],
     ], require $cacheFile);
   }
 
@@ -65,7 +77,13 @@ class RouterCacheTest extends TestCase {
     $this->assertStringContainsString("Routes cached -> {$cacheFile}", $output);
     $this->assertFileExists($cacheFile);
     $this->assertSame([
-      'GET' => ['/users' => [DummyController::class, 'index']],
+      'GET' => [
+        '/users' => [
+          'handler' => [DummyController::class, 'index'],
+          'middleware' => [],
+          'signature' => 'GET /users',
+        ],
+      ],
     ], require $cacheFile);
   }
 
