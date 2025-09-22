@@ -43,6 +43,9 @@
       "Tests\\": "tests/"
     }
   },
+  "require-dev": {
+    "phpunit/phpunit": "^11.2"
+  },
   "bin": [
     "bin/bamboo"
   ],
