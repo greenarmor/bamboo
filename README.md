@@ -75,6 +75,29 @@ task list mirroring the freeze checklist, making it easier for contributors to
 claim work, stage drafts, and cross-link new material as the release candidate
 takes shape.
 
+## Starter blueprints
+
+Opinionated Bamboo starter templates provide guardrails for common workloads.
+When you are ready to scaffold a project, consult the
+[`docs/starters/README.md`](docs/starters/README.md) hub for end-to-end
+instructions. Each blueprint is installable with `composer create-project` and
+shares configuration conventions with the main framework:
+
+* **REST API** – `composer create-project bamboo/starter-rest my-api` seeds JSON
+  routes, validation middleware, and OpenAPI hooks for service teams that need a
+  production-ready HTTP surface quickly.
+* **Queue worker** – `composer create-project bamboo/starter-queue my-worker`
+  provisions Redis-backed job dispatch, worker supervisors, and observability
+  probes tuned for asynchronous pipelines.
+* **WebSocket gateway** – `composer create-project bamboo/starter-websocket
+  my-gateway` layers authentication, broadcast helpers, and metrics on top of an
+  OpenSwoole WebSocket server for realtime workloads.
+
+All starters ship with `.env` templates, smoke tests, and operational checklists
+so you can move from local development to production without rewriting the
+scaffolding.
+
+
 ## CLI
 http.serve, routes.show, routes.cache, cache.purge, app.key.make,
 queue.work, ws.serve, dev.watch, schedule.run, pkg.info, client.call
@@ -110,6 +133,29 @@ baseline in sync.
 artifacts, and then executes Composer validation, PHP CS Fixer (dry run),
 PHPStan, and PHPUnit. On failure the workflow uploads collected logs and cache
 artifacts for triage. Check the GitHub Actions tab for the latest status.
+
+## Static site publishing requirements
+
+Bamboo documentation is built with MkDocs. To preview or publish the static
+site:
+
+1. Install Python 3.11+ and create a virtual environment (`python -m venv
+   .venv && source .venv/bin/activate`).
+2. Install MkDocs and required plugins: `pip install mkdocs mkdocs-material
+   mkdocs-awesome-pages-plugin mkdocs-minify-plugin` (or `pip install -r
+   docs/requirements.txt` if present).
+3. Run `mkdocs serve -a 0.0.0.0:8000` for local previews or `mkdocs build
+   --strict` to produce the deployable site under `site/`.
+4. Configure CI or hosting (Netlify, GitHub Pages, Cloudflare Pages) to execute
+   the build command on every default-branch push and publish the resulting
+   `site/` directory. Ensure the job installs MkDocs dependencies before running
+   the build.
+5. Add starter guides and new documents to `mkdocs.yml` navigation so they appear
+   in the published site. Enable collections/sections if you want starters to
+   render as feature cards on the landing page.
+
+Deployment pipelines should cache the virtual environment between runs to keep
+build times low and fail the build when MkDocs emits warnings in strict mode.
 
 ## Overview
 
