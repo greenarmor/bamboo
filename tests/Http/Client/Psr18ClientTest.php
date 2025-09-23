@@ -52,6 +52,11 @@ class RecordingPsr18Client implements Psr18 {
 }
 
 class Psr18ClientTest extends TestCase {
+  protected function tearDown(): void {
+    Psr18Client::$forceWaitGroupAvailability = null;
+    parent::tearDown();
+  }
+
   public function testSendRetriesFailedResponses(): void {
     $psr17 = new Psr17Factory();
     $responses = [
@@ -102,6 +107,54 @@ class Psr18ClientTest extends TestCase {
     $this->assertSame('https://example.com/a', (string) $delegate->requests[0]->getUri());
     $this->assertSame('https://example.com/b', (string) $delegate->requests[1]->getUri());
     $this->assertSame('https://example.com/b', (string) $delegate->requests[2]->getUri());
+  }
+
+  public function testSendConcurrentFallsBackWhenWaitGroupUnavailable(): void {
+    $psr17 = new Psr17Factory();
+    $responses = [
+      $psr17->createResponse(200)->withBody($psr17->createStream('one')),
+      new \RuntimeException('boom'),
+    ];
+
+    $delegate = new RecordingPsr18Client($responses);
+    $client = new Psr18Client($delegate, []);
+
+    Psr18Client::$forceWaitGroupAvailability = false;
+
+    $requests = [
+      new ServerRequest('GET', 'https://example.com/a'),
+      new ServerRequest('GET', 'https://example.com/b'),
+    ];
+
+    $warnings = [];
+    $results = [];
+    set_error_handler(function (int $errno, string $errstr) use (&$warnings): bool {
+      $warnings[] = ['errno' => $errno, 'message' => $errstr];
+      return true;
+    });
+
+    try {
+      $results = $client->sendConcurrent($requests);
+    } finally {
+      restore_error_handler();
+    }
+
+    $this->assertCount(2, $results);
+    $this->assertSame('one', (string) $results[0]->getBody());
+    $this->assertSame(200, $results[0]->getStatusCode());
+
+    $this->assertSame(599, $results[1]->getStatusCode());
+    $error = json_decode((string) $results[1]->getBody(), true);
+    $this->assertSame('boom', $error['error']);
+
+    $this->assertCount(3, $delegate->requests);
+    $this->assertSame('https://example.com/a', (string) $delegate->requests[0]->getUri());
+    $this->assertSame('https://example.com/b', (string) $delegate->requests[1]->getUri());
+    $this->assertSame('https://example.com/b', (string) $delegate->requests[2]->getUri());
+
+    $this->assertCount(1, $warnings);
+    $this->assertSame(E_USER_WARNING, $warnings[0]['errno']);
+    $this->assertStringContainsString('WaitGroup not available', $warnings[0]['message']);
   }
 
   public function testSendConcurrentWithinOpenSwooleCoroutine(): void {

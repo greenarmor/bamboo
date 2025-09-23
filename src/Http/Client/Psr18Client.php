@@ -7,6 +7,11 @@ use Psr\Http\Message\ResponseInterface;
 use Nyholm\Psr7\Factory\Psr17Factory;
 
 final class Psr18Client implements ClientInterface {
+  /**
+   * @internal allows tests to emulate WaitGroup availability
+   */
+  public static ?bool $forceWaitGroupAvailability = null;
+
   public function __construct(
     private Psr18 $client,
     private array $options = []
@@ -26,6 +31,38 @@ final class Psr18Client implements ClientInterface {
       return [];
     }
 
+    if (!$this->waitGroupAvailable()) {
+      $this->logWaitGroupWarning();
+      return $this->sendSequentially($requests);
+    }
+
+    return $this->sendWithWaitGroup($requests);
+  }
+
+  /**
+   * @param list<RequestInterface> $requests
+   * @return list<ResponseInterface>
+   */
+  private function sendSequentially(array $requests): array {
+    $responses = [];
+    foreach ($requests as $index => $request) {
+      try {
+        $responses[$index] = $this->send($request);
+      } catch (\Throwable $e) {
+        $responses[$index] = $this->createErrorResponse($e);
+      }
+    }
+
+    ksort($responses);
+
+    return array_values($responses);
+  }
+
+  /**
+   * @param list<RequestInterface> $requests
+   * @return list<ResponseInterface>
+   */
+  private function sendWithWaitGroup(array $requests): array {
     /** @var array<int, ResponseInterface> $responses */
     $responses = [];
     $runner = function () use (&$responses, $requests): void {
@@ -36,17 +73,15 @@ final class Psr18Client implements ClientInterface {
           try {
             $responses[$index] = $this->send($request);
           } catch (\Throwable $e) {
-            $responses[$index] = (new Psr17Factory())->createResponse(599)->withBody(
-              (new Psr17Factory())->createStream(json_encode(['error' => $e->getMessage()], JSON_THROW_ON_ERROR))
-            );
+            $responses[$index] = $this->createErrorResponse($e);
           } finally {
             $wg->done();
           }
         });
       }
+
       $wg->wait();
       ksort($responses);
-      $responses = array_values($responses);
     };
 
     if (method_exists(\OpenSwoole\Coroutine::class, 'getCid') && \OpenSwoole\Coroutine::getCid() >= 0) {
@@ -59,6 +94,31 @@ final class Psr18Client implements ClientInterface {
     });
 
     return array_values($responses);
+  }
+
+  private function waitGroupAvailable(): bool {
+    if (self::$forceWaitGroupAvailability !== null) {
+      return self::$forceWaitGroupAvailability;
+    }
+
+    return class_exists(\OpenSwoole\Coroutine\WaitGroup::class);
+  }
+
+  private function logWaitGroupWarning(): void {
+    $message = 'OpenSwoole\\Coroutine\\WaitGroup not available; falling back to sequential HTTP requests. ' .
+      'Verify that the OpenSwoole extension is installed and up to date to enable concurrent requests.';
+
+    if (!trigger_error($message, E_USER_WARNING)) {
+      error_log($message);
+    }
+  }
+
+  private function createErrorResponse(\Throwable $e): ResponseInterface {
+    $psr17 = new Psr17Factory();
+
+    return $psr17->createResponse(599)->withBody(
+      $psr17->createStream(json_encode(['error' => $e->getMessage()], JSON_THROW_ON_ERROR))
+    );
   }
 
   private function applyDefaults(RequestInterface $r): RequestInterface {
