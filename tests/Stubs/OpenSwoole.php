@@ -81,6 +81,102 @@ if (!class_exists(__NAMESPACE__ . '\\Server')) {
     }
 }
 
+if (!class_exists(__NAMESPACE__ . '\\Table')) {
+    class Table implements \IteratorAggregate, \Countable
+    {
+        public const TYPE_INT = 1;
+        public const TYPE_FLOAT = 2;
+        public const TYPE_STRING = 3;
+
+        /** @var array<string, array{type: int, size: int}> */
+        private array $columns = [];
+
+        /** @var array<string, array<string, scalar>> */
+        private array $rows = [];
+
+        public function __construct(private int $size)
+        {
+        }
+
+        public function column(string $name, int $type, int $size = 0): void
+        {
+            $this->columns[$name] = ['type' => $type, 'size' => $size];
+        }
+
+        public function create(): bool
+        {
+            return true;
+        }
+
+        public function set(string $key, array $values): bool
+        {
+            $row = $this->rows[$key] ?? [];
+            foreach ($values as $column => $value) {
+                if (!array_key_exists($column, $this->columns)) {
+                    continue;
+                }
+
+                $row[$column] = $value;
+            }
+
+            $this->rows[$key] = $row;
+
+            return true;
+        }
+
+        public function get(string $key, ?string $column = null): mixed
+        {
+            if (!array_key_exists($key, $this->rows)) {
+                return false;
+            }
+
+            if ($column === null) {
+                return $this->rows[$key];
+            }
+
+            return $this->rows[$key][$column] ?? null;
+        }
+
+        public function exists(string $key): bool
+        {
+            return array_key_exists($key, $this->rows);
+        }
+
+        public function incr(string $key, string $column, float $value = 1.0): float
+        {
+            $row = $this->rows[$key] ?? [];
+            $current = (float) ($row[$column] ?? 0.0);
+            $row[$column] = $current + $value;
+            $this->rows[$key] = $row;
+
+            return $row[$column];
+        }
+
+        public function del(string $key): bool
+        {
+            if (!array_key_exists($key, $this->rows)) {
+                return false;
+            }
+
+            unset($this->rows[$key]);
+
+            return true;
+        }
+
+        public function getIterator(): \Traversable
+        {
+            foreach ($this->rows as $key => $row) {
+                yield $key => $row;
+            }
+        }
+
+        public function count(): int
+        {
+            return count($this->rows);
+        }
+    }
+}
+
 namespace OpenSwoole\Coroutine;
 
 if (!class_exists(__NAMESPACE__ . '\\WaitGroup')) {

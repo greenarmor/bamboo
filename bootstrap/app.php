@@ -1,6 +1,7 @@
 <?php
 use Dotenv\Dotenv;
 use Bamboo\Core\{Application, Config, ConfigValidator, ConfigurationException};
+use Prometheus\Storage\Adapter;
 
 require __DIR__ . '/../vendor/autoload.php';
 
@@ -30,5 +31,9 @@ if (!is_array($modules)) {
 }
 $app->bootModules($modules);
 $app->bootEloquent();
+
+// Pre-warm the Prometheus storage adapter so OpenSwoole workers inherit the
+// shared collector when the HTTP server forks worker processes.
+$app->get(Adapter::class);
 
 return $app;

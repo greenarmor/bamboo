@@ -69,7 +69,6 @@ class HealthChecksTest extends TestCase {
     $_ENV['HTTP_PORT'] = (string)PortAllocator::allocate();
     ServerInstrumentation::reset();
 
-       try {
       try {
         require dirname(__DIR__, 3) . '/bootstrap/server.php';
       } catch (\OpenSwoole\Exception $e) {
