@@ -18,7 +18,13 @@ class Application extends Container {
     $this->singleton(Kernel::class, fn() => new Kernel($this->get(Config::class)));
     $this->bootRoutes();
   }
-  public function config(?string $key = null, $default = null) { return $this->get(Config::class)->get($key, $default); }
+  /**
+   * @param mixed $default
+   * @return mixed
+   */
+  public function config(?string $key = null, $default = null) {
+    return $this->get(Config::class)->get($key, $default);
+  }
   protected function bootRoutes(): void {
     $router = $this->get('router');
     $cache = $this->config('cache.routes');
@@ -64,6 +70,9 @@ class Application extends Container {
       function(callable $next, string $middlewareClass) use (&$terminators) {
         return function(Request $request) use ($middlewareClass, $next, &$terminators) {
           $instance = $this->instantiateMiddleware($middlewareClass);
+          if (!method_exists($instance, 'handle')) {
+            throw new \BadMethodCallException(sprintf('Middleware %s must define a handle() method.', $middlewareClass));
+          }
           $isTerminable = is_callable([$instance, 'terminate']);
           $requestForTerminate = $request;
           $response = $instance->handle($request, function(Request $nextRequest) use ($next, $isTerminable, &$requestForTerminate) {
@@ -108,7 +117,16 @@ class Application extends Container {
     }
     return $ref->newInstanceArgs($args);
   }
-  public function register($provider): void { $provider->register($this); }
+  /**
+   * @param object $provider
+   */
+  public function register(object $provider): void {
+    if (!method_exists($provider, 'register')) {
+      throw new \BadMethodCallException(sprintf('Service provider %s must define a register() method.', $provider::class));
+    }
+
+    $provider->register($this);
+  }
   /**
    * @param list<class-string<ModuleInterface>> $moduleClasses
    */

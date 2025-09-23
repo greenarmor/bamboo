@@ -29,6 +29,10 @@ class Config {
     return $this->items;
   }
 
+  /**
+   * @param mixed $default
+   * @return mixed
+   */
   public function get(?string $key = null, $default = null) {
     if ($key === null) return $this->items;
     $segments = explode('.', $key);

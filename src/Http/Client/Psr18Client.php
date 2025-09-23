@@ -12,6 +12,9 @@ final class Psr18Client implements ClientInterface {
    */
   public static ?bool $forceWaitGroupAvailability = null;
 
+  /**
+   * @param array<string, mixed> $options
+   */
   public function __construct(
     private Psr18 $client,
     private array $options = []
@@ -89,7 +92,7 @@ final class Psr18Client implements ClientInterface {
       return array_values($responses);
     }
 
-    \OpenSwoole\Coroutine::run(function () use (&$responses, $runner): void {
+    \OpenSwoole\Coroutine::run(function () use ($runner): void {
       $runner();
     });
 
@@ -108,9 +111,8 @@ final class Psr18Client implements ClientInterface {
     $message = 'OpenSwoole\\Coroutine\\WaitGroup not available; falling back to sequential HTTP requests. ' .
       'Verify that the OpenSwoole extension is installed and up to date to enable concurrent requests.';
 
-    if (!trigger_error($message, E_USER_WARNING)) {
-      error_log($message);
-    }
+    trigger_error($message, E_USER_WARNING);
+    error_log($message);
   }
 
   private function createErrorResponse(\Throwable $e): ResponseInterface {
@@ -128,7 +130,10 @@ final class Psr18Client implements ClientInterface {
     return $r;
   }
 
-  private function withRetry(callable $fn) {
+  /**
+   * @param callable(): ResponseInterface $fn
+   */
+  private function withRetry(callable $fn): ResponseInterface {
     $cfg = $this->options['retries'] ?? [];
     $max = max(0, (int)($cfg['max'] ?? 0));
     $base = max(0, (int)($cfg['base_delay_ms'] ?? 100));

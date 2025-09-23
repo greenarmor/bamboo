@@ -21,21 +21,21 @@ final class CircuitBreakerMetrics
     {
         $namespace = is_string($config['namespace'] ?? null) ? $config['namespace'] : 'bamboo';
 
-        $this->failures = $registry->getOrRegisterCounter(
+        $this->failures = $this->registry->getOrRegisterCounter(
             $namespace,
             'http_circuit_breaker_failures_total',
             'Total number of HTTP requests recorded as circuit breaker failures.',
             ['method', 'route']
         );
 
-        $this->opens = $registry->getOrRegisterCounter(
+        $this->opens = $this->registry->getOrRegisterCounter(
             $namespace,
             'http_circuit_breaker_open_total',
             'Total number of times the HTTP circuit breaker transitioned to the open state.',
             ['method', 'route']
         );
 
-        $this->state = $registry->getOrRegisterGauge(
+        $this->state = $this->registry->getOrRegisterGauge(
             $namespace,
             'http_circuit_breaker_state',
             'Current circuit breaker state for each route (0=closed,1=half-open,2=open).',

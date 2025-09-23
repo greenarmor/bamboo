@@ -345,6 +345,9 @@ class SwooleTableAdapter implements Adapter
         return $results;
     }
 
+    /**
+     * @param array<string, mixed> $data
+     */
     private function ensureMeta(string $metaKey, array $data): void
     {
         if ($this->readMeta($metaKey) !== null) {
@@ -374,6 +377,9 @@ class SwooleTableAdapter implements Adapter
         return $decoded;
     }
 
+    /**
+     * @param array<string, mixed> $meta
+     */
     private function writeMeta(string $metaKey, array $meta): void
     {
         $this->writeString($metaKey, $this->encodeJson($meta));
@@ -497,6 +503,9 @@ class SwooleTableAdapter implements Adapter
         }, $decoded);
     }
 
+    /**
+     * @param array<int, array{time: int, value: float}> $samples
+     */
     private function writeSummarySamples(string $metaKey, string $valueKey, array $samples): void
     {
         if ($samples === []) {
@@ -524,6 +533,9 @@ class SwooleTableAdapter implements Adapter
         $this->stringTable->set($key, [self::COLUMN_PAYLOAD => $value]);
     }
 
+    /**
+     * @param array<int|string, mixed> $value
+     */
     private function encodeJson(array $value): string
     {
         $encoded = json_encode($value);
@@ -534,11 +546,17 @@ class SwooleTableAdapter implements Adapter
         return $encoded;
     }
 
+    /**
+     * @param array<string, mixed> $data
+     */
     private function metaKey(array $data): string
     {
         return self::PREFIX_META . $this->metricIdentifier($data['type'], $data['name']);
     }
 
+    /**
+     * @param array<string, mixed> $data
+     */
     private function valueKey(array $data): string
     {
         $metricId = $this->metricIdentifier($data['type'], $data['name']);
@@ -547,6 +565,9 @@ class SwooleTableAdapter implements Adapter
         return self::PREFIX_SAMPLE . $metricId . ':' . $labelIdentifier . ':value';
     }
 
+    /**
+     * @param array<string, mixed> $data
+     */
     private function histogramBucketValueKey(array $data, string $bucket): string
     {
         $metricId = $this->metricIdentifier($data['type'], $data['name']);
@@ -565,6 +586,10 @@ class SwooleTableAdapter implements Adapter
         return self::PREFIX_SAMPLES . $this->metricIdentifierFromMetaKey($metaKey);
     }
 
+    /**
+     * @param array<string, mixed> $data
+     * @return array<string, mixed>
+     */
     private function metaData(array $data): array
     {
         $meta = $data;
@@ -572,6 +597,9 @@ class SwooleTableAdapter implements Adapter
         return $meta;
     }
 
+    /**
+     * @param array<int, array{name: string, labelNames: array<int, string>, labelValues: array<int|string, scalar>, value: float|int}> $samples
+     */
     private function sortSamples(array &$samples): void
     {
         usort($samples, static function (array $a, array $b): int {
@@ -579,6 +607,9 @@ class SwooleTableAdapter implements Adapter
         });
     }
 
+    /**
+     * @param array<int|string, scalar|null> $values
+     */
     private function encodeLabelValues(array $values): string
     {
         $json = $this->encodeJson($values);
@@ -592,6 +623,9 @@ class SwooleTableAdapter implements Adapter
         return $hash;
     }
 
+    /**
+     * @return array<int|string, mixed>
+     */
     private function decodeLabelValues(string $identifier): array
     {
         $key = $this->labelStorageKey($identifier);
@@ -627,6 +661,9 @@ class SwooleTableAdapter implements Adapter
         return $metaKey;
     }
 
+    /**
+     * @return array{metric: string, labels: string, suffix: string}|null
+     */
     private function parseSampleKey(string $sampleKey): ?array
     {
         if (!str_starts_with($sampleKey, self::PREFIX_SAMPLE)) {

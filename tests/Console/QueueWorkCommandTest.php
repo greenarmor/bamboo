@@ -42,6 +42,7 @@ class QueueWorkCommandTest extends TestCase {
     ob_start();
     $exitCode = $command->handle(['--max-jobs=2']);
     $output = ob_get_clean();
+    $this->assertIsString($output);
 
     $this->assertSame(0, $exitCode);
     $this->assertStringContainsString("Worker listening on 'jobs'", $output);

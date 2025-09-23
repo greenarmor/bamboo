@@ -3,14 +3,26 @@ namespace Bamboo\Web;
 
 use Bamboo\Core\Config;
 
+/**
+ * @phpstan-type MiddlewareConfig array{
+ *   global: list<string>,
+ *   groups: array<string, list<string>>,
+ *   aliases: array<string, string>
+ * }
+ */
 class Kernel {
+  /**
+   * @var MiddlewareConfig
+   */
   protected array $config = [
     'global' => [],
     'groups' => [],
     'aliases' => [],
   ];
 
+  /** @var list<string> */
   protected array $expandedGlobal = [];
+  /** @var array<string, list<string>> */
   protected array $resolved = [];
   protected string $configHash = '';
   protected ?string $routeCacheFile = null;
@@ -18,6 +30,10 @@ class Kernel {
 
   public function __construct(protected Config $configStore) {}
 
+  /**
+   * @param list<string> $routeMiddleware
+   * @return list<string>
+   */
   public function forRoute(string $signature, array $routeMiddleware = []): array {
     $this->refreshConfiguration();
 
@@ -36,8 +52,13 @@ class Kernel {
   protected function refreshConfiguration(): void {
     $middleware = $this->configStore->get('middleware') ?? [];
     $hash = md5(serialize($middleware));
-    $routeCacheFile = $this->configStore->get('cache.routes');
-    $routeCacheMtime = ($routeCacheFile && file_exists($routeCacheFile)) ? filemtime($routeCacheFile) : null;
+    $routeCacheFileRaw = $this->configStore->get('cache.routes');
+    $routeCacheFile = is_string($routeCacheFileRaw) && $routeCacheFileRaw !== '' ? $routeCacheFileRaw : null;
+    $routeCacheMtime = null;
+    if ($routeCacheFile !== null && file_exists($routeCacheFile)) {
+      $mtime = filemtime($routeCacheFile);
+      $routeCacheMtime = $mtime === false ? null : $mtime;
+    }
 
     if ($hash !== $this->configHash) {
       $this->config = $this->normalizeConfiguration($middleware);
@@ -53,9 +74,21 @@ class Kernel {
     }
   }
 
+  /**
+   * @param array{global?: iterable<mixed>, groups?: array<string, iterable<mixed>>, aliases?: array<string, mixed>} $config
+   * @return MiddlewareConfig
+   */
   protected function normalizeConfiguration(array $config): array {
+    $globalSource = $config['global'] ?? [];
+    if ($globalSource instanceof \Traversable) {
+      $globalSource = iterator_to_array($globalSource);
+    }
+    if (!is_array($globalSource)) {
+      $globalSource = [$globalSource];
+    }
+
     $global = array_values(array_filter(
-      array_map(static fn($value) => is_string($value) ? $value : (string) $value, $config['global'] ?? []),
+      array_map(static fn($value) => is_string($value) ? $value : (string) $value, $globalSource),
       static fn($value) => $value !== ''
     ));
 
@@ -78,6 +111,11 @@ class Kernel {
     ];
   }
 
+  /**
+   * @param list<string> $entries
+   * @param list<string> $seenGroups
+   * @return list<string>
+   */
   protected function expandEntries(array $entries, array $seenGroups = []): array {
     $resolved = [];
     foreach ($this->normalizeMiddlewareList($entries) as $entry) {
@@ -88,6 +126,10 @@ class Kernel {
     return $resolved;
   }
 
+  /**
+   * @param list<string> $seenGroups
+   * @return list<string>
+   */
   protected function expandEntry(mixed $entry, array $seenGroups): array {
     if (is_string($entry)) {
       if (isset($this->config['groups'][$entry])) {
@@ -106,6 +148,9 @@ class Kernel {
     return [$entry];
   }
 
+  /**
+   * @return list<string>
+   */
   protected function normalizeMiddlewareList(mixed $middleware): array {
     if ($middleware === null) return [];
     if ($middleware instanceof \Traversable) {

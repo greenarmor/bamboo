@@ -33,6 +33,7 @@ class HttpServeCommandTest extends TestCase {
     ob_start();
     $exitCode = $command->handle([]);
     $output = ob_get_clean();
+    $this->assertIsString($output);
 
     $this->assertSame(0, $exitCode);
     $this->assertStringContainsString('Bamboo HTTP online', $output);

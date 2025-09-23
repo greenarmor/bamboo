@@ -160,12 +160,13 @@ class ApplicationRoutesTest extends TestCase {
     $request = new ServerRequest('GET', '/test/two/demo');
     $response = $app->handle($request);
 
-    $this->assertSame(200, $response->getStatusCode());
-    $this->assertSame('application/json', $response->getHeaderLine('Content-Type'));
-    $this->assertSame(['value' => 'demo'], json_decode((string) $response->getBody(), true));
-    $this->assertSame($request->getUri()->getPath(), $capturedRequest->getUri()->getPath());
-    $this->assertSame(['value' => 'demo'], $capturedVars);
-  }
+      $this->assertSame(200, $response->getStatusCode());
+      $this->assertSame('application/json', $response->getHeaderLine('Content-Type'));
+      $this->assertSame(['value' => 'demo'], json_decode((string) $response->getBody(), true));
+      $this->assertInstanceOf(ServerRequest::class, $capturedRequest);
+      $this->assertSame($request->getUri()->getPath(), $capturedRequest->getUri()->getPath());
+      $this->assertSame(['value' => 'demo'], $capturedVars);
+    }
 
   public function testMetricsRouteRendersPrometheusTextFormat(): void {
     $app = $this->createApp();

@@ -73,7 +73,14 @@ class Psr18ClientTest extends TestCase {
     $request = $psr17->createRequest('GET', 'https://example.com');
     $response = $client->send($request);
 
-    $this->assertSame(200, $response->getStatusCode());
+      if (!$response instanceof ResponseInterface) {
+        throw new \LogicException('Expected a response instance.');
+      }
+
+      /** @var ResponseInterface $response */
+      $response = $response;
+
+      $this->assertSame(200, $response->getStatusCode());
     $this->assertCount(2, $delegate->requests);
     $this->assertSame('Test-Agent', $delegate->requests[0]->getHeaderLine('User-Agent'));
     $this->assertSame('Test-Agent', $delegate->requests[1]->getHeaderLine('User-Agent'));
@@ -215,6 +222,13 @@ class Psr18ClientTest extends TestCase {
     \OpenSwoole\Coroutine::run(function () use ($client, $request, &$response): void {
       $response = $client->send($request);
     });
+
+    if (!$response instanceof ResponseInterface) {
+      throw new \LogicException('Expected a response instance.');
+    }
+
+    /** @var ResponseInterface $response */
+    $response = $response;
 
     $this->assertSame(200, $response->getStatusCode());
     $this->assertNotEmpty(OpenSwooleHook::$microSleeps);

@@ -89,7 +89,7 @@ class HealthChecksTest extends TestCase {
     unset($_ENV['DISABLE_HTTP_SERVER_START']);
     unset($_ENV['HTTP_PORT']);
 
-    if (OpenSwooleCompat::httpServerUsesStub()) {
+    if (class_exists(\OpenSwoole\HTTP\Server::class) && property_exists(\OpenSwoole\HTTP\Server::class, 'lastInstance')) {
       \OpenSwoole\HTTP\Server::$lastInstance = null;
     }
 

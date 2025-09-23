@@ -227,6 +227,9 @@ class Router {
     return array_values(array_map(static fn($item) => is_string($item) ? $item : (string) $item, $middleware));
   }
 
+  /**
+   * @param array<int|string, mixed> $array
+   */
   private function isAssociative(array $array): bool {
     return array_keys($array) !== range(0, count($array) - 1);
   }
@@ -258,11 +261,18 @@ class Router {
     return $arguments;
   }
 
+  /**
+   * @return (\ReflectionFunction|\ReflectionMethod)
+   */
   private function reflectCallable(callable $handler): \ReflectionFunctionAbstract {
     if ($handler instanceof Closure) return new \ReflectionFunction($handler);
     if (is_array($handler)) return new \ReflectionMethod($handler[0], $handler[1]);
     if (is_string($handler) && str_contains($handler, '::')) return new \ReflectionMethod($handler);
     if (is_object($handler) && method_exists($handler, '__invoke')) return new \ReflectionMethod($handler, '__invoke');
+    if (!is_string($handler)) {
+      throw new \InvalidArgumentException('Unsupported route handler callable.');
+    }
+
     return new \ReflectionFunction($handler);
   }
 

@@ -6,6 +6,7 @@ namespace Bamboo\Web\Middleware;
 
 use Bamboo\Observability\Metrics\HttpMetrics;
 use Bamboo\Web\RequestContext;
+use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface as Request;
 
 class HttpMetricsCollector
@@ -14,7 +15,7 @@ class HttpMetricsCollector
     {
     }
 
-    public function handle(Request $request, \Closure $next)
+    public function handle(Request $request, \Closure $next): ResponseInterface
     {
         $method = $request->getMethod();
         $route = $this->context->get('route', sprintf('%s %s', $method, $request->getUri()->getPath()));

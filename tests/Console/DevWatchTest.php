@@ -189,13 +189,21 @@ class DevWatchTest extends TestCase
 
 class ArrayLogger extends AbstractLogger
 {
+    /**
+     * @var list<array{level: string, message: string, context: array<string, mixed>}> 
+     */
     public array $records = [];
 
+    /**
+     * @param string $level
+     * @param string|\Stringable $message
+     * @param array<string, mixed> $context
+     */
     public function log($level, $message, array $context = []): void
     {
         $this->records[] = [
-            'level' => $level,
-            'message' => $message,
+            'level' => (string) $level,
+            'message' => (string) $message,
             'context' => $context,
         ];
     }
@@ -203,6 +211,7 @@ class ArrayLogger extends AbstractLogger
 
 class StubWatcher implements FileWatcher
 {
+    /** @var list<string> */
     public array $paths = [];
 
     public function poll(): bool
@@ -234,10 +243,15 @@ class SupervisorDouble extends DevWatchSupervisor
 
 class TestableDevWatch extends DevWatch
 {
+    /** @var array<string, mixed> */
     public array $calls = [];
     public ?SupervisorDouble $createdSupervisor = null;
+    /** @var list<array<string, mixed>> */
     public array $processEnvironment = [];
 
+    /**
+     * @param callable $factory
+     */
     public function __construct(
         RouterTestApplication $app,
         private ArrayLogger $logger,
@@ -253,12 +267,19 @@ class TestableDevWatch extends DevWatch
         return $this->logger;
     }
 
+    /**
+     * @param list<string> $paths
+     * @return list<string>
+     */
     protected function resolveWatchPaths(array $paths, LoggerInterface $logger): array
     {
         $this->calls['resolveWatchPaths'][] = $paths;
         return $paths;
     }
 
+    /**
+     * @param list<string> $paths
+     */
     protected function createWatcher(array $paths, LoggerInterface $logger): FileWatcher
     {
         $this->calls['createWatcher'][] = $paths;
@@ -273,6 +294,9 @@ class TestableDevWatch extends DevWatch
         return $this->factory;
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     protected function createProcessEnvironment(): array
     {
         $env = parent::createProcessEnvironment();

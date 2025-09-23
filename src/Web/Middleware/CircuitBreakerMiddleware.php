@@ -89,6 +89,10 @@ final class CircuitBreakerMiddleware
         return $response;
     }
 
+    /**
+     * @param array{state: string, failures: int, successes: int, opened_at: float|null} $state
+     * @param array{enabled: bool, failure_threshold: int, cooldown_seconds: float, success_threshold: int} $settings
+     */
     private function recordFailure(string $method, string $route, array &$state, array $settings, float $now): void
     {
         $this->metrics->recordFailure($method, $route);

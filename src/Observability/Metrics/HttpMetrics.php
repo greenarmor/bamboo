@@ -26,35 +26,35 @@ class HttpMetrics
         $durationMetric = sprintf('%s_http_request_duration_seconds', $namespace);
         $buckets = $this->resolveBuckets($durationMetric);
 
-        $this->requestsTotal = $registry->getOrRegisterCounter(
+        $this->requestsTotal = $this->registry->getOrRegisterCounter(
             $namespace,
             'http_requests_total',
             'Total number of HTTP responses produced by the Bamboo HTTP kernel.',
             ['method', 'route', 'status']
         );
 
-        $this->requestsFailed = $registry->getOrRegisterCounter(
+        $this->requestsFailed = $this->registry->getOrRegisterCounter(
             $namespace,
             'http_requests_failed_total',
             'Total number of HTTP requests that resulted in an unhandled exception.',
             ['method', 'route']
         );
 
-        $this->timeouts = $registry->getOrRegisterCounter(
+        $this->timeouts = $this->registry->getOrRegisterCounter(
             $namespace,
             'http_timeouts_total',
             'Total number of HTTP requests aborted by timeout middleware.',
             ['method', 'route']
         );
 
-        $this->inFlight = $registry->getOrRegisterGauge(
+        $this->inFlight = $this->registry->getOrRegisterGauge(
             $namespace,
             'http_requests_in_flight',
             'Current number of in-flight HTTP requests being processed by Bamboo.',
             ['method', 'route']
         );
 
-        $this->duration = $registry->getOrRegisterHistogram(
+        $this->duration = $this->registry->getOrRegisterHistogram(
             $namespace,
             'http_request_duration_seconds',
             'HTTP request duration, measured from middleware entry to response emission.',
@@ -116,6 +116,9 @@ class HttpMetrics
         $this->inFlight->dec([$method, $route]);
     }
 
+    /**
+     * @param array{started: float, method: string, route: string} $timer
+     */
     private function elapsed(array $timer): float
     {
         $started = $timer['started'] ?? microtime(true);

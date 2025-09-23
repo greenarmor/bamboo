@@ -82,6 +82,9 @@ if (!class_exists(__NAMESPACE__ . '\\Server')) {
 }
 
 if (!class_exists(__NAMESPACE__ . '\\Table')) {
+    /**
+     * @implements \IteratorAggregate<string, array<string, scalar>>
+     */
     class Table implements \IteratorAggregate, \Countable
     {
         public const TYPE_INT = 1;
@@ -108,8 +111,15 @@ if (!class_exists(__NAMESPACE__ . '\\Table')) {
             return true;
         }
 
+        /**
+         * @param array<string, scalar> $values
+         */
         public function set(string $key, array $values): bool
         {
+            if ($this->size > 0 && count($this->rows) >= $this->size) {
+                array_shift($this->rows);
+            }
+
             $row = $this->rows[$key] ?? [];
             foreach ($values as $column => $value) {
                 if (!array_key_exists($column, $this->columns)) {
@@ -163,6 +173,9 @@ if (!class_exists(__NAMESPACE__ . '\\Table')) {
             return true;
         }
 
+        /**
+         * @return \Traversable<string, array<string, scalar>>
+         */
         public function getIterator(): \Traversable
         {
             foreach ($this->rows as $key => $row) {
@@ -308,5 +321,13 @@ if (!class_exists(__NAMESPACE__ . '\\Response')) {
         {
             $this->body .= $body;
         }
+    }
+}
+
+namespace OpenSwoole;
+
+if (!class_exists(__NAMESPACE__ . '\\Exception')) {
+    class Exception extends \RuntimeException
+    {
     }
 }
