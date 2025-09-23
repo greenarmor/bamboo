@@ -13,7 +13,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        php-version: ['8.2', '8.3', '8.4']
+        # TODO: Re-enable the PHP 8.4 lane once shivammathur/setup-php and
+        # OpenSwoole publish compatible builds.
+        php-version: ['8.2', '8.3']
 
     steps:
       - name: Checkout
@@ -44,12 +46,7 @@ jobs:
             composer-${{ runner.os }}-
 
       - name: Install dependencies
-        if: matrix.php-version == '8.4'
         run: composer install --prefer-dist --no-interaction --no-progress
-
-      - name: Install dependencies (ignore PHP platform req)
-        if: matrix.php-version != '8.4'
-        run: composer install --prefer-dist --no-interaction --no-progress --ignore-platform-req=php
 
       - name: Validate configuration schema
         run: composer validate:config
