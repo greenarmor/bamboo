@@ -318,7 +318,7 @@ HELP;
     {
         $value = $_ENV['BAMBOO_DEV_WATCH_KEEP_XDEBUG'] ?? getenv('BAMBOO_DEV_WATCH_KEEP_XDEBUG');
 
-        if ($value === false || $value === null || $value === '') {
+        if ($value === false || $value === '') {
             return false;
         }
 

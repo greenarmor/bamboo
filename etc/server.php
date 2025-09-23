@@ -1,7 +1,8 @@
 <?php
+$utilClass = 'OpenSwoole\\Util';
 $cpuNum =
-    (class_exists('\OpenSwoole\Util') && method_exists('\OpenSwoole\Util', 'getCPUNum'))
-        ? \OpenSwoole\Util::getCPUNum()
+    (class_exists($utilClass) && is_callable([$utilClass, 'getCPUNum']))
+        ? (int) call_user_func([$utilClass, 'getCPUNum'])
         : (function_exists('swoole_cpu_num')
             ? swoole_cpu_num()
             : (int) (trim(@shell_exec('nproc 2>/dev/null')) ?: 1));
