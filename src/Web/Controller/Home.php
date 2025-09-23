@@ -10,9 +10,26 @@ class Home {
     $data = [
       'framework' => $this->app->config('app.name'),
       'php' => PHP_VERSION,
-      'swoole' => defined('SWOOLE_VERSION') ? SWOOLE_VERSION : null,
+      'swoole' => $this->resolveSwooleVersion(),
       'time' => date(DATE_ATOM)
     ];
     return new Response(200, ['Content-Type'=>'application/json'], json_encode($data));
+  }
+
+  private function resolveSwooleVersion(): string {
+    if (defined('SWOOLE_VERSION')) {
+      return SWOOLE_VERSION;
+    }
+
+    foreach (['openswoole', 'swoole'] as $extension) {
+      if (extension_loaded($extension)) {
+        $version = phpversion($extension);
+        if (is_string($version) && $version !== '') {
+          return $version;
+        }
+      }
+    }
+
+    return 'not installed';
   }
 }

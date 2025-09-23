@@ -130,7 +130,11 @@ class Config {
       'resilience' => file_exists($this->dir . '/resilience.php') ? require $this->dir . '/resilience.php' : [
         'timeouts' => [
           'default' => 3.0,
-          'per_route' => [],
+          'per_route' => [
+            'GET /api/httpbin' => [
+              'timeout' => 20.0,
+            ],
+          ],
         ],
         'circuit_breaker' => [
           'enabled' => true,

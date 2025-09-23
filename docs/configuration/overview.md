@@ -109,7 +109,7 @@ environment variables `DB_CONNECTION`, `DB_HOST`, `DB_PORT`, `DB_DATABASE`,
 | Key | Type | Default | Environment override |
 |-----|------|---------|-----------------------|
 | `timeouts.default` | float | `3.0` | `BAMBOO_HTTP_TIMEOUT_DEFAULT` |
-| `timeouts.per_route` | array<string, float|array> | `[]` | — |
+| `timeouts.per_route` | array<string, float|array> | `['GET /api/httpbin' => ['timeout' => 20.0]]` | — |
 | `circuit_breaker.enabled` | bool | `true` | `BAMBOO_CIRCUIT_BREAKER_ENABLED` |
 | `circuit_breaker.failure_threshold` | int | `5` | `BAMBOO_CIRCUIT_BREAKER_FAILURES` |
 | `circuit_breaker.success_threshold` | int | `1` | `BAMBOO_CIRCUIT_BREAKER_SUCCESS` |
@@ -119,7 +119,9 @@ environment variables `DB_CONNECTION`, `DB_HOST`, `DB_PORT`, `DB_DATABASE`,
 
 Per-route overrides accept either a scalar timeout or an array with keys such as
 `timeout`, `enabled`, and thresholds mirroring the default circuit breaker
-settings.
+settings. The stock configuration ships with a `GET /api/httpbin` override set
+to 20 seconds so the sample concurrent HTTP client endpoint remains usable even
+when OpenSwoole coroutine wait groups are unavailable.
 
 ### `etc/ws.php`
 

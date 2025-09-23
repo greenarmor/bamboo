@@ -50,6 +50,14 @@ class ApplicationRoutesTest extends TestCase {
     $this->assertIsArray($data);
     $this->assertSame('Bamboo', $data['framework']);
     $this->assertArrayHasKey('php', $data);
+    $this->assertArrayHasKey('swoole', $data);
+    $this->assertIsString($data['swoole']);
+    if (defined('SWOOLE_VERSION') || extension_loaded('openswoole') || extension_loaded('swoole')) {
+      $this->assertNotSame('not installed', $data['swoole']);
+      $this->assertNotSame('', $data['swoole']);
+    } else {
+      $this->assertSame('not installed', $data['swoole']);
+    }
     $this->assertArrayHasKey('time', $data);
   }
 

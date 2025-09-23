@@ -7,7 +7,11 @@ return [
         'default' => isset($_ENV['BAMBOO_HTTP_TIMEOUT_DEFAULT'])
             ? max(0.0, (float) $_ENV['BAMBOO_HTTP_TIMEOUT_DEFAULT'])
             : 3.0,
-        'per_route' => [],
+        'per_route' => [
+            'GET /api/httpbin' => [
+                'timeout' => 20.0,
+            ],
+        ],
     ],
     'circuit_breaker' => [
         'enabled' => filter_var($_ENV['BAMBOO_CIRCUIT_BREAKER_ENABLED'] ?? true, FILTER_VALIDATE_BOOLEAN),

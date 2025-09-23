@@ -84,4 +84,37 @@ class TimeoutMiddlewareTest extends TestCase {
     $this->assertSame(1.0, (float) $samples[0]->getValue());
     $this->assertSame(['GET', 'GET /metrics'], array_slice($samples[0]->getLabelValues(), 0, 2));
   }
+
+  public function testTimeoutMiddlewareRespectsPerRouteOverride(): void {
+    $config = new ArrayConfig([
+      'resilience' => [
+        'timeouts' => [
+          'default' => 0.01,
+          'per_route' => [
+            'GET /slow' => ['timeout' => 0.05],
+          ],
+        ],
+      ],
+    ]);
+
+    $registry = new CollectorRegistry(new InMemory());
+    $metrics = new HttpMetrics($registry, ['namespace' => 'test']);
+    $context = new RequestContext();
+    $context->merge(['route' => 'GET /slow']);
+
+    $middleware = new TimeoutMiddleware($config, $context, $metrics);
+    $request = new ServerRequest('GET', '/slow');
+
+    $response = $middleware->handle($request, function() {
+      usleep(20000); // 20ms
+      return new Response(200, ['Content-Type' => 'application/json'], json_encode(['ok' => true], JSON_THROW_ON_ERROR));
+    });
+
+    $this->assertSame(200, $response->getStatusCode());
+    $this->assertSame('application/json', $response->getHeaderLine('Content-Type'));
+    $elapsedHeader = $response->getHeaderLine('X-Bamboo-Elapsed');
+    $this->assertNotSame('', $elapsedHeader);
+    $this->assertGreaterThanOrEqual(0.015, (float) $elapsedHeader);
+    $this->assertLessThan(0.05, (float) $elapsedHeader);
+  }
 }
