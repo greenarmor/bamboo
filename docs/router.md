@@ -1,5 +1,131 @@
 # HTTP Router Contract (v1.0 Freeze)
 
+Bamboo routes requests through `Bamboo\Core\Router`, a thin wrapper around
+FastRoute tuned for long-lived OpenSwoole workers. The router API is part of the
+v1.0 public contract; helpers, middleware semantics, and error payloads will
+remain stable across the 1.x series.
+
+## Route registration and helpers
+
+Applications and modules obtain the router from the container (`$app->get('router')`)
+or inject it into service providers. Routes can be registered at bootstrap time
+or cached to disk.
+
+```php
+$router->get('/hello/{name}', [GreetingController::class, 'show']);
+$router->post('/jobs', RouteDefinition::forHandler([
+    JobController::class, 'enqueue'],
+    middlewareGroups: ['queue'],
+));
+$router->addRoute('DELETE', '/cache/{key}', function (ServerRequestInterface $request, array $vars) {
+    return new JsonResponse(['deleted' => $vars['key']]);
+});
+```
+
+### Supported methods
+
+- `Router::get(string $path, callable|array|RouteDefinition $handler, array $middleware = [], array $groups = [])`
+- `Router::post(...)`
+- `Router::addRoute(string $method, string $path, ...)`
+
+`addRoute` accepts any valid HTTP verb and stores the definition internally with
+a normalised signature. Custom helpers can wrap `addRoute` when additional verbs
+(such as PUT, PATCH, DELETE) are required.
+
+### Route definitions
+
+Handlers can be expressed as:
+
+- A PHP callable (`function (...) { ... }`).
+- A controller tuple `[ClassName::class, 'method']`.
+- An associative array with `handler`, `middleware`, `middleware_groups`, or
+  legacy keys (`uses`, `action`).
+- A `Bamboo\Core\RouteDefinition` instance for explicit signatures.
+
+`RouteDefinition::signature` overrides the derived signature used for cache keys
+and request context metadata. When omitted, the router uses `"<METHOD> <PATH>"`.
+
+### Parameter tokens
+
+Paths follow FastRoute syntax. `{name}` captures a single path segment using the
+`[^/]+` regex. Inline constraints are supported: `{id:\d+}` restricts the token
+to digits, `{slug:[a-z0-9\-]+}` enforces slug-friendly characters. Matched
+variables are passed to the handler as part of the `$vars` array or injected via
+argument names (`$id`, `$slug`) when the callable signature includes them.
+
+Closures and controller methods may type-hint the PSR-7 request or the
+application container; the router performs best-effort argument matching. The
+following invocation strategies are part of the contract:
+
+```php
+$router->get('/demo/{id}', function (ServerRequestInterface $request, array $vars, Application $app) {
+    // $request === the incoming request
+    // $vars === ['id' => '123']
+    // $app   === Bamboo\Core\Application instance
+});
+```
+
+## Middleware composition
+
+Middleware ordering is deterministic:
+
+1. **Global middleware** – `etc/middleware.php['global']`.
+2. **Group middleware** – merged for each named group listed by the route.
+3. **Route middleware** – entries supplied directly to the route definition.
+
+Aliases declared under `etc/middleware.php['aliases']` are resolved before the
+pipeline executes. Modules may contribute additional entries via
+`ModuleInterface::middleware`; contributions are merged with the same ordering
+rules. See `tests/Core/ApplicationPipelineTest.php` for a thorough ordering
+specification and terminable middleware guarantees.
+
+## Error handling
+
+The router produces canonical JSON payloads for framework-level errors:
+
+- **404 Not Found** – `{"error":"Not Found"}`
+- **405 Method Not Allowed** – `{"error":"Method Not Allowed"}` with an
+  `Allow` header listing permitted verbs.
+- **500 Routing failure** – `{"error":"Routing failure"}` emitted when an
+  unexpected dispatcher status occurs.
+
+These responses inherit headers required for Prometheus and tracing middleware,
+ensuring monitoring remains consistent even when no route matches. Application
+middleware can override or extend the behaviour by catching responses upstream.
+
+## Route caching contract
+
+`Router::cacheTo($file)` exports the in-memory map to PHP, enabling instant boot
+without re-registering routes. Because PHP cannot serialise closures safely, the
+cache routine rejects any definition that contains a closure and throws a
+`RuntimeException`. Operators should run `php bin/bamboo routes.cache` as part of
+build pipelines once the application route table stabilises.
+
+## Deprecation policy
+
+- Existing helper methods (`get`, `post`, `addRoute`, `gatherMiddleware`) remain
+  stable throughout the 1.x line. New helpers may be added in minor releases.
+- Future helper deprecations must trigger `E_USER_DEPRECATED` notices while
+  keeping the old API functional for at least one minor release.
+- Parameter token semantics and the default error payload schema are frozen; any
+  changes require a new major release with upgrade-guide choreography.
+
+## Contract validation
+
+- `tests/Http/ApplicationRoutesTest.php` exercises built-in routes, parameter
+  injection, and the Prometheus `/metrics` exporter.
+- `tests/Core/ApplicationPipelineTest.php` covers middleware ordering, alias
+  resolution, and terminable middleware behaviour.
+- `tests/Roadmap/V0_4/TimeoutMiddlewareTest.php` and
+  `tests/Roadmap/V0_4/CircuitBreakerMiddlewareTest.php` ensure resilience
+  middleware integrates correctly with router-driven signatures.
+- `tests/Console/RoutesShowCommandTest.php` and `tests/Core/ApplicationModulesTest.php`
+  guard the cached route format and module contributions.
+
+Together with the new `config.validate` command, these suites guarantee the
+router contract is exercised in CI before the v1.0 release is tagged.
+# HTTP Router Contract (v1.0 Freeze)
+
 Bamboo's HTTP router exposes the framework's primary public surface area. This
 reference freezes the v1.x contract so that applications can rely on routing,
 middleware, and error semantics remaining stable across the major series.

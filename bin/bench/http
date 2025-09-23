@@ -1,0 +1,328 @@
+#!/usr/bin/env php8.4
+<?php
+declare(strict_types=1);
+
+if (in_array('--help', $argv, true) || in_array('-h', $argv, true)) {
+    echo <<<"TXT"
+Bamboo HTTP benchmark harness
+
+Usage:
+  php bin/bench/http --target=http://127.0.0.1:9501/ [--duration=30] [--concurrency=32]
+                     [--method=GET] [--body='{"json":true}'] [--header="Key: Value"]...
+                     [--warmup=5] [--label=baseline] [--csv=docs/benchmarks/data/file.csv]
+
+Options:
+  --target        Fully-qualified URL to exercise.
+  --duration      Sample duration in seconds (default: 30).
+  --concurrency   Number of concurrent requests maintained (default: 16).
+  --method        HTTP method to issue (default: GET).
+  --body          Request body payload (applied to all requests).
+  --header        Additional request headers (repeatable).
+  --warmup        Optional warm-up duration in seconds (default: 3, set to 0 to skip).
+  --label         Scenario label recorded alongside CSV output.
+  --csv           When provided, append a metrics row to the given CSV file.
+
+The script relies on the PHP cURL extension and drives a best-effort load test from
+this host. It is intended for relative comparisons (before/after a change) rather
+than absolute performance certification.
+TXT;
+    exit(0);
+}
+
+if (!function_exists('curl_init')) {
+    fwrite(STDERR, "The cURL extension is required to run the benchmark harness.\n");
+    exit(1);
+}
+
+$options = getopt('', [
+    'target:',
+    'duration::',
+    'concurrency::',
+    'method::',
+    'body::',
+    'header::',
+    'warmup::',
+    'label::',
+    'csv::',
+]);
+
+$target = isset($options['target']) ? (string) $options['target'] : 'http://127.0.0.1:9501/';
+if (!filter_var($target, FILTER_VALIDATE_URL)) {
+    fwrite(STDERR, "Invalid --target URL supplied.\n");
+    exit(1);
+}
+
+$duration = isset($options['duration']) ? max(1.0, (float) $options['duration']) : 30.0;
+$concurrency = isset($options['concurrency']) ? max(1, (int) $options['concurrency']) : 16;
+$method = isset($options['method']) ? strtoupper((string) $options['method']) : 'GET';
+$body = $options['body'] ?? null;
+$warmup = isset($options['warmup']) ? max(0.0, (float) $options['warmup']) : 3.0;
+$label = isset($options['label']) ? (string) $options['label'] : null;
+$csvPath = isset($options['csv']) ? (string) $options['csv'] : null;
+
+$headerOption = $options['header'] ?? [];
+if (!is_array($headerOption)) {
+    $headerOption = [$headerOption];
+}
+$headers = [];
+foreach ($headerOption as $entry) {
+    $entry = (string) $entry;
+    if (trim($entry) === '') {
+        continue;
+    }
+    if (!str_contains($entry, ':')) {
+        fwrite(STDERR, "Ignored malformed header (expected 'Name: Value'): {$entry}\n");
+        continue;
+    }
+    $headers[] = trim($entry);
+}
+
+if ($warmup > 0.0) {
+    fwrite(STDERR, sprintf("[bench] Warm-up for %.1f seconds...\n", $warmup));
+    runBenchmark($target, $warmup, $concurrency, $method, $headers, $body);
+}
+
+$result = runBenchmark($target, $duration, $concurrency, $method, $headers, $body);
+
+$outputLabel = $label ?? sprintf('%s %s', $method, $target);
+
+printf("Scenario: %s\n", $outputLabel);
+printf("Target:   %s\n", $target);
+printf("Duration: %.2fs (actual %.2fs)\n", $duration, $result['duration']);
+printf("Throughput: %.2f requests/second\n", $result['throughput']);
+printf("Requests: %d (errors: %d)\n", $result['requests'], $result['errors']);
+if ($result['requests'] > 0) {
+    printf("Latency p50: %.2f ms\n", $result['latency']['p50']);
+    printf("Latency p95: %.2f ms\n", $result['latency']['p95']);
+    printf("Latency p99: %.2f ms\n", $result['latency']['p99']);
+}
+
+if ($result['status_counts'] !== []) {
+    echo "Status codes:\n";
+    foreach ($result['status_counts'] as $status => $count) {
+        printf("  %d => %d\n", $status, $count);
+    }
+}
+
+if ($csvPath !== null) {
+    appendCsvRow($csvPath, [
+        'scenario' => $outputLabel,
+        'target' => $target,
+        'method' => $method,
+        'concurrency' => $concurrency,
+        'duration_seconds' => $result['duration'],
+        'requests' => $result['requests'],
+        'requests_per_second' => $result['throughput'],
+        'p50_ms' => $result['latency']['p50'],
+        'p95_ms' => $result['latency']['p95'],
+        'p99_ms' => $result['latency']['p99'],
+        'error_count' => $result['errors'],
+        'error_rate' => $result['requests'] > 0
+            ? $result['errors'] / $result['requests']
+            : 0.0,
+    ]);
+    printf("CSV row appended to %s\n", $csvPath);
+}
+
+exit(0);
+
+/**
+ * @param list<string> $headers
+ * @return array{
+ *     requests:int,
+ *     errors:int,
+ *     throughput:float,
+ *     duration:float,
+ *     latency:array{p50:float,p95:float,p99:float},
+ *     status_counts:array<int,int>
+ * }
+ */
+function runBenchmark(string $target, float $duration, int $concurrency, string $method, array $headers, mixed $body): array
+{
+    $multi = curl_multi_init();
+    if ($multi === false) {
+        throw new RuntimeException('Unable to initialize cURL multi handle.');
+    }
+
+    $start = hrtime(true);
+    $deadline = $start + (int) ($duration * 1_000_000_000);
+
+    $activeHandles = [];
+    $startTimes = [];
+    $latencies = [];
+    $statusCounts = [];
+    $requests = 0;
+    $errors = 0;
+
+    $launchHandle = function () use (
+        &$activeHandles,
+        &$startTimes,
+        $multi,
+        $target,
+        $method,
+        $headers,
+        $body
+    ): void {
+        $handle = createRequestHandle($target, $method, $headers, $body);
+        $id = spl_object_id($handle);
+        $activeHandles[$id] = $handle;
+        $startTimes[$id] = hrtime(true);
+        curl_multi_add_handle($multi, $handle);
+    };
+
+    while (count($activeHandles) < $concurrency && hrtime(true) < $deadline) {
+        $launchHandle();
+    }
+
+    do {
+        do {
+            $status = curl_multi_exec($multi, $running);
+        } while ($status === CURLM_CALL_MULTI_PERFORM);
+
+        while ($info = curl_multi_info_read($multi)) {
+            /** @var CurlHandle $handle */
+            $handle = $info['handle'];
+            $id = spl_object_id($handle);
+            $latency = isset($startTimes[$id])
+                ? (hrtime(true) - $startTimes[$id]) / 1_000_000
+                : 0.0;
+
+            unset($startTimes[$id]);
+            curl_multi_remove_handle($multi, $handle);
+            unset($activeHandles[$id]);
+
+            if ($info['result'] !== CURLE_OK) {
+                $errors++;
+            } else {
+                $statusCode = curl_getinfo($handle, CURLINFO_RESPONSE_CODE);
+                if (is_int($statusCode) && $statusCode > 0) {
+                    $statusCounts[$statusCode] = ($statusCounts[$statusCode] ?? 0) + 1;
+                }
+                $latencies[] = $latency;
+                $requests++;
+            }
+
+            curl_close($handle);
+
+            if (hrtime(true) < $deadline) {
+                $launchHandle();
+            }
+        }
+
+        if ($running > 0) {
+            curl_multi_select($multi, 0.01);
+        }
+
+        if (hrtime(true) >= $deadline && $running === 0 && $activeHandles === []) {
+            break;
+        }
+    } while ($running > 0 || hrtime(true) < $deadline);
+
+    foreach ($activeHandles as $id => $handle) {
+        curl_multi_remove_handle($multi, $handle);
+        curl_close($handle);
+        unset($activeHandles[$id]);
+    }
+
+    curl_multi_close($multi);
+
+    $elapsed = max(0.001, (hrtime(true) - $start) / 1_000_000_000);
+    $throughput = $requests / $elapsed;
+
+    return [
+        'requests' => $requests,
+        'errors' => $errors,
+        'throughput' => $throughput,
+        'duration' => $elapsed,
+        'latency' => [
+            'p50' => percentile($latencies, 50.0),
+            'p95' => percentile($latencies, 95.0),
+            'p99' => percentile($latencies, 99.0),
+        ],
+        'status_counts' => $statusCounts,
+    ];
+}
+
+/**
+ * @param list<string> $headers
+ */
+function createRequestHandle(string $target, string $method, array $headers, mixed $body): CurlHandle
+{
+    $handle = curl_init($target);
+    if ($handle === false) {
+        throw new RuntimeException('Failed to initialize request handle.');
+    }
+
+    curl_setopt_array($handle, [
+        CURLOPT_CUSTOMREQUEST => $method,
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_HEADER => false,
+        CURLOPT_NOSIGNAL => true,
+        CURLOPT_TIMEOUT_MS => 30000,
+        CURLOPT_CONNECTTIMEOUT_MS => 3000,
+        CURLOPT_WRITEFUNCTION => static function (): int {
+            $args = func_get_args();
+            $chunk = $args[1] ?? '';
+            return is_string($chunk) ? strlen($chunk) : 0;
+        },
+    ]);
+
+    if ($headers !== []) {
+        curl_setopt($handle, CURLOPT_HTTPHEADER, $headers);
+    }
+
+    if ($body !== null) {
+        curl_setopt($handle, CURLOPT_POSTFIELDS, $body);
+    }
+
+    return $handle;
+}
+
+/**
+ * @param list<float> $values
+ */
+function percentile(array $values, float $percentile): float
+{
+    if ($values === []) {
+        return 0.0;
+    }
+
+    sort($values);
+    $index = ($percentile / 100) * (count($values) - 1);
+    $lower = (int) floor($index);
+    $upper = (int) ceil($index);
+
+    if ($lower === $upper) {
+        return $values[$lower];
+    }
+
+    $weight = $index - $lower;
+
+    return $values[$lower] + ($values[$upper] - $values[$lower]) * $weight;
+}
+
+/**
+ * @param array<string, string|int|float> $row
+ */
+function appendCsvRow(string $path, array $row): void
+{
+    $dir = dirname($path);
+    if (!is_dir($dir)) {
+        if (!@mkdir($dir, 0775, true) && !is_dir($dir)) {
+            throw new RuntimeException(sprintf('Unable to create directory for CSV output: %s', $dir));
+        }
+    }
+
+    $isNewFile = !file_exists($path);
+    $handle = fopen($path, 'ab');
+    if ($handle === false) {
+        throw new RuntimeException(sprintf('Unable to open CSV file for writing: %s', $path));
+    }
+
+    if ($isNewFile) {
+        fputcsv($handle, array_keys($row));
+    }
+
+    fputcsv($handle, array_values($row));
+    fclose($handle);
+}

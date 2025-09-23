@@ -1,5 +1,157 @@
 # Configuration Schema Overview (v1.0 Contract)
 
+Bamboo treats every file under `etc/` as part of the stable contract. The
+following tables document each schema, default values, and environment overrides
+for the v1.0 release. Use `composer validate:config` (which calls
+`php bin/bamboo config.validate`) to catch drift before deploying.
+
+## Quick reference
+
+| File | Purpose |
+|------|---------|
+| `etc/app.php` | Application identity, environment flags, log destination. |
+| `etc/server.php` | OpenSwoole HTTP server host, port, worker counts, static file toggle. |
+| `etc/cache.php` | Cache directory and route cache path. |
+| `etc/middleware.php` | Global, group, and alias definitions for HTTP middleware. |
+| `etc/modules.php` | Ordered list of application modules to boot. |
+| `etc/redis.php` | Redis connection string and queue name. |
+| `etc/database.php` | Optional database connection definitions. |
+| `etc/http.php` | HTTP client defaults and named service endpoints. |
+| `etc/metrics.php` | Prometheus namespace, storage driver, histogram buckets. |
+| `etc/resilience.php` | Request timeouts, circuit breaker thresholds, health checks. |
+| `etc/ws.php` | WebSocket server host and port. |
+
+## Schema details
+
+### `etc/app.php`
+
+| Key | Type | Default | Environment override |
+|-----|------|---------|-----------------------|
+| `name` | string | `Bamboo` | `APP_NAME` |
+| `env` | string | `local` | `APP_ENV` |
+| `debug` | bool | `true` | `APP_DEBUG` (parsed as boolean) |
+| `key` | string | empty string | `APP_KEY` |
+| `log_file` | string | `var/log/app.log` | `LOG_FILE` |
+
+When `debug` is disabled, `app.key` must contain a non-empty secret; the
+configuration validator enforces this requirement.
+
+### `etc/server.php`
+
+| Key | Type | Default | Environment override |
+|-----|------|---------|-----------------------|
+| `host` | string | `127.0.0.1` | `HTTP_HOST` |
+| `port` | int | `9501` | `HTTP_PORT` |
+| `workers` | int | CPU count | `HTTP_WORKERS` (`auto` uses detected CPU cores) |
+| `task_workers` | int | `0` | `TASK_WORKERS` |
+| `max_requests` | int | `10000` | `MAX_REQUESTS` |
+| `static_enabled` | bool | `true` | `STATIC_ENABLED` |
+
+### `etc/cache.php`
+
+| Key | Type | Default | Notes |
+|-----|------|---------|-------|
+| `path` | string | `var/cache` | Directory for application cache artifacts. |
+| `routes` | string | `var/cache/routes.cache.php` | Route cache produced by `routes.cache`. |
+
+### `etc/middleware.php`
+
+Returns an associative array with optional `global`, `groups`, and `aliases`
+entries. Each value must resolve to fully-qualified class names or alias strings.
+Modules append to these arrays via `ModuleInterface::middleware`. See the router
+contract for ordering semantics.
+
+### `etc/modules.php`
+
+Returns a list of module class names implementing
+`Bamboo\Module\ModuleInterface`. Modules are loaded in order and participate in
+the lifecycle described in `docs/modules.md`.
+
+### `etc/redis.php`
+
+| Key | Type | Default | Environment override |
+|-----|------|---------|-----------------------|
+| `url` | string | `tcp://127.0.0.1:6379` | `REDIS_URL` |
+| `queue` | string | `jobs` | `REDIS_QUEUE` |
+
+### `etc/database.php`
+
+Optional. When present it must provide a `default` connection key and a
+`connections` map. The stock template configures a MySQL connection using
+environment variables `DB_CONNECTION`, `DB_HOST`, `DB_PORT`, `DB_DATABASE`,
+`DB_USERNAME`, and `DB_PASSWORD`.
+
+### `etc/http.php`
+
+| Key | Type | Description |
+|-----|------|-------------|
+| `default.timeout` | float | Per-request timeout in seconds. |
+| `default.headers` | array | Key/value pairs applied to every outbound request. |
+| `default.retries.max` | int | Maximum retry attempts for retriable status codes. |
+| `default.retries.base_delay_ms` | int | Exponential backoff base delay in milliseconds. |
+| `default.retries.status_codes` | array<int> | HTTP status codes that trigger a retry. |
+| `services` | array<string, array> | Named services with overrides such as `base_uri` and `timeout`. |
+
+### `etc/metrics.php`
+
+| Key | Type | Default | Environment override |
+|-----|------|---------|-----------------------|
+| `namespace` | string | `bamboo` | `BAMBOO_METRICS_NAMESPACE` (not set by default) |
+| `storage.driver` | string | `swoole_table` | `BAMBOO_METRICS_STORAGE` |
+| `storage.swoole_table.value_rows` | int | `16384` | — |
+| `storage.swoole_table.string_rows` | int | `2048` | — |
+| `storage.swoole_table.string_size` | int | `4096` | — |
+| `storage.apcu.prefix` | string | `bamboo_prom` | `BAMBOO_METRICS_APCU_PREFIX` |
+| `histogram_buckets` | array<string, array<float>> | Default buckets keyed by metric name. |
+
+### `etc/resilience.php`
+
+| Key | Type | Default | Environment override |
+|-----|------|---------|-----------------------|
+| `timeouts.default` | float | `3.0` | `BAMBOO_HTTP_TIMEOUT_DEFAULT` |
+| `timeouts.per_route` | array<string, float|array> | `[]` | — |
+| `circuit_breaker.enabled` | bool | `true` | `BAMBOO_CIRCUIT_BREAKER_ENABLED` |
+| `circuit_breaker.failure_threshold` | int | `5` | `BAMBOO_CIRCUIT_BREAKER_FAILURES` |
+| `circuit_breaker.success_threshold` | int | `1` | `BAMBOO_CIRCUIT_BREAKER_SUCCESS` |
+| `circuit_breaker.cooldown_seconds` | float | `30.0` | `BAMBOO_CIRCUIT_BREAKER_COOLDOWN` |
+| `circuit_breaker.per_route` | array<string, mixed> | `[]` | — |
+| `health.dependencies` | array | `[]` | — |
+
+Per-route overrides accept either a scalar timeout or an array with keys such as
+`timeout`, `enabled`, and thresholds mirroring the default circuit breaker
+settings.
+
+### `etc/ws.php`
+
+| Key | Type | Default | Environment override |
+|-----|------|---------|-----------------------|
+| `host` | string | `127.0.0.1` | `WS_HOST` |
+| `port` | int | `9502` | `WS_PORT` |
+
+## Validation hooks
+
+- `Bamboo\Core\ConfigValidator` enforces the schema above. It raises
+  `ConfigurationException` with aggregated error messages when constraints are
+  violated.
+- `php bin/bamboo config.validate` runs the validator against the current
+  configuration tree and prints the result. The Composer alias
+  `composer validate:config` is suitable for CI pipelines.
+- PHPUnit coverage in `tests/Core/ConfigValidatorTest.php` and
+  `tests/Console/ConfigValidateCommandTest.php` guards the validator behaviour.
+
+## Migration and deprecation policy
+
+- Renaming configuration keys requires a one-minor-release compatibility window.
+  During the window, code must read both the legacy and the new key while
+  emitting `E_USER_DEPRECATED` notices when the legacy key is used.
+- Removing configuration files or sections is a breaking change and must be
+  reserved for major releases.
+- New configuration files should ship with validation logic and documentation
+  updates across `docs/configuration/`, the upgrade guide, and the CLI reference.
+- Operators should rerun `composer validate:config` after every upgrade and before
+  deploying to catch missing env vars or schema drift.
+# Configuration Schema Overview (v1.0 Contract)
+
 Bamboo loads every PHP array under `etc/` through `Bamboo\Core\Config`,
 normalising the results into a single tree that backs the `config()` helper and
 module bootstrap sequence.【F:src/Core/Config.php†L5-L107】 Runtime validation

@@ -68,12 +68,23 @@ documentation deliverables are tracked in
 [`docs/roadmap/v1.0-prep.md`](docs/roadmap/v1.0-prep.md) so the community can
 monitor checklist progress toward the stable milestone.
 
-To kick off the v1.0 documentation sprint, stub workspaces now live under
-`docs/cli/`, `docs/router.md`, `docs/modules.md`, `docs/configuration/`,
-`docs/upgrade/v1.0.md`, `docs/benchmarks/`, and `docs/starters/`. Each file is a
-task list mirroring the freeze checklist, making it easier for contributors to
-claim work, stage drafts, and cross-link new material as the release candidate
-takes shape.
+The v1.0 documentation set is now complete:
+
+* [`docs/cli/`](docs/cli/README.md) freezes the dot-notation command contracts
+  and deprecation policy.
+* [`docs/router.md`](docs/router.md) captures supported HTTP verbs, parameter
+  tokens, middleware ordering, and error payload schemas.
+* [`docs/modules.md`](docs/modules.md) defines lifecycle expectations for
+  `ModuleInterface` implementers.
+* [`docs/configuration/`](docs/configuration/overview.md) publishes the schema
+  for every `etc/*.php` file and explains the `composer validate:config`
+  workflow.
+* [`docs/upgrade/v1.0.md`](docs/upgrade/v1.0.md) provides the upgrade playbook
+  for projects moving from the 0.x series.
+* [`docs/benchmarks/`](docs/benchmarks/README.md) describes the reproducible
+  benchmarking harness and chart generation pipeline.
+* [`docs/starters/`](docs/starters/README.md) introduces the REST, queue worker,
+  and WebSocket starter blueprints published as Composer templates.
 
 ## Starter blueprints
 
@@ -100,7 +111,15 @@ scaffolding.
 
 ## CLI
 http.serve, routes.show, routes.cache, cache.purge, app.key.make,
-queue.work, ws.serve, dev.watch, schedule.run, pkg.info, client.call
+config.validate, queue.work, ws.serve, dev.watch, schedule.run,
+pkg.info, client.call
+
+### Benchmark tooling
+
+Use `php bin/bench/http` to record throughput/latency data. The harness writes
+CSV files consumable by `python3 docs/tools/plot-bench.py`, which produces
+publication-ready throughput and latency charts for release notes.
+
 
 ## Quality tooling & CI
 

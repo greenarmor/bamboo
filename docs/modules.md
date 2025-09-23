@@ -1,3 +1,112 @@
+# Module Extension API (v1.0 Contract)
+
+Modules package reusable integrations for Bamboo. Each module implements
+`Bamboo\Module\ModuleInterface` and is loaded through `Application::bootModules`
+after the framework has registered its core providers. This document freezes the
+contract for v1.0 module authors.
+
+## Lifecycle hooks
+
+`ModuleInterface` defines three methods:
+
+1. `register(Application $app): void`
+   - Called immediately after the module is instantiated.
+   - Register container singletons, bindings, and configuration defaults.
+   - Avoid performing I/O or resolving heavy services.
+2. `boot(Application $app): void`
+   - Invoked after **all** modules have finished registration.
+   - Safe place to resolve dependencies registered by other modules.
+   - Ideal for wiring event listeners, scheduling jobs, or introspecting
+     configuration.
+3. `middleware(): array`
+   - Returns global middleware, named groups, or alias definitions using the
+     structure consumed by `Config::mergeMiddleware()`.
+   - Called once per module; the return value is merged into `config('middleware')`
+     before the HTTP kernel builds route-specific stacks.
+
+Modules are instantiated in the order they appear in `etc/modules.php`.
+`register()` is executed for each module in sequence, then `boot()` is executed
+in the same order. This guarantees deterministic setup and mirrors the behaviour
+covered by `tests/Core/ApplicationModulesTest.php`.
+
+## Discovery and configuration
+
+Modules are discovered through `etc/modules.php` which returns a list of
+fully-qualified class names:
+
+```php
+<?php
+return [
+    App\Infrastructure\MetricsModule::class,
+    Vendor\Package\QueueModule::class,
+];
+```
+
+Configuration guidelines:
+
+- Use dedicated `etc/` files (e.g. `etc/queue.php`) or nest module configuration
+  under a namespaced key inside `config('app')`. Document the expected schema in
+  your package README and expose validation logic when appropriate.
+- Publish sensible defaults inside `register()` so downstream applications can
+  opt-in incrementally.
+- When contributing middleware, return arrays shaped like:
+
+```php
+public function middleware(): array
+{
+    return [
+        'global' => [\Vendor\Middleware\Audit::class],
+        'groups' => [
+            'api' => [\Vendor\Middleware\Authorize::class],
+        ],
+        'aliases' => [
+            'vendor.audit' => \Vendor\Middleware\Audit::class,
+        ],
+    ];
+}
+```
+
+## Semantic versioning guidance
+
+Modules follow normal semver rules:
+
+- Backwards-incompatible changes to exported PHP classes, configuration keys, or
+  middleware aliases require a major version bump.
+- Adding optional constructor arguments, new configuration keys with sensible
+  defaults, or additional middleware entries is safe in minor releases.
+- When introducing new hooks, provide default implementations so existing
+  consumers continue to operate without modification.
+
+Compatibility testing should cover:
+
+- `phpunit` suites that assert container bindings and middleware are registered.
+- Static analysis (PHPStan/Psalm) that exercises public APIs.
+- Smoke tests against a Bamboo skeleton app to ensure the module boots under
+  `php bin/bamboo http.serve`.
+
+## Deprecation policy
+
+- Announce deprecations in your module's changelog and documentation.
+- Emit `E_USER_DEPRECATED` notices the first time deprecated functionality is
+  used.
+- Maintain deprecated methods or aliases for at least one minor release. Removal
+  must coincide with a major release and an upgrade guide entry.
+- Provide automated migration helpers (PHP CS Fixer rules, Rector sets, etc.)
+  when APIs undergo structural changes.
+
+## Quality gates and examples
+
+- `tests/Core/ApplicationModulesTest.php` in the Bamboo repository verifies
+  middleware merging order and lifecycle sequencing.
+- Example modules shipping with the framework (`Tests\Stubs\TestModuleAlpha`
+  and `TestModuleBeta`) demonstrate how to publish middleware groups, global
+  entries, and aliases in a deterministic manner.
+- Modules are expected to integrate with the `composer validate:config` workflow
+  by offering validators for any new configuration files and documenting the
+  command in their README.
+
+By adhering to this contract, module authors can publish integrations that
+remain compatible across the entire 1.x series without surprises for operators.
 # Module Extension API (v1.0 Freeze)
 
 Modules let teams extend Bamboo's container, middleware pipeline, and background

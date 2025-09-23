@@ -1,4 +1,179 @@
 #!/usr/bin/env python3
+"""Generate throughput and latency charts from Bamboo benchmark CSV files."""
+
+from __future__ import annotations
+
+import argparse
+import csv
+import sys
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Iterable, List
+
+
+@dataclass
+class DataPoint:
+    concurrency: int
+    requests_per_second: float
+    p50_ms: float
+    p95_ms: float
+    p99_ms: float
+
+
+@dataclass
+class Dataset:
+    label: str
+    source: Path
+    points: List[DataPoint]
+
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        description="Plot throughput and latency trends for Bamboo benchmark runs",
+    )
+    parser.add_argument(
+        "data_dir",
+        type=Path,
+        nargs="?",
+        default=Path("docs/benchmarks/data"),
+        help="Directory containing CSV benchmark results.",
+    )
+    parser.add_argument(
+        "--output",
+        type=Path,
+        default=Path("docs/benchmarks"),
+        help="Directory where charts will be written.",
+    )
+    parser.add_argument(
+        "--formats",
+        default="png",
+        help="Comma separated list of output formats (png,pdf,svg).",
+    )
+    parser.add_argument(
+        "--datasets",
+        nargs="*",
+        help="Optional list of dataset basenames to include (matches CSV stem).",
+    )
+    parser.add_argument(
+        "--title-prefix",
+        default="Bamboo v1.0 benchmarks",
+        help="Prefix added to generated chart titles.",
+    )
+    return parser.parse_args()
+
+
+def main() -> int:
+    args = parse_args()
+    formats = [ext.strip() for ext in args.formats.split(",") if ext.strip()]
+    if not formats:
+        print("No output formats specified.", file=sys.stderr)
+        return 1
+
+    datasets = load_datasets(args.data_dir, args.datasets)
+    if not datasets:
+        print(f"No benchmark datasets found in {args.data_dir}.")
+        return 0
+
+    try:
+        import matplotlib.pyplot as plt
+    except ImportError:  # pragma: no cover - dependency check
+        print(
+            "matplotlib is required to render charts. Install it with 'pip install matplotlib'.",
+            file=sys.stderr,
+        )
+        return 1
+
+    args.output.mkdir(parents=True, exist_ok=True)
+
+    throughput_fig = plot_throughput(plt, datasets, args.title_prefix)
+    latency_fig = plot_latency(plt, datasets, args.title_prefix)
+
+    for fmt in formats:
+        ext = fmt.lower()
+        throughput_path = args.output / f"throughput.{ext}"
+        latency_path = args.output / f"latency.{ext}"
+        throughput_fig.savefig(throughput_path, dpi=180, bbox_inches="tight")
+        latency_fig.savefig(latency_path, dpi=180, bbox_inches="tight")
+        print(f"Wrote {throughput_path.relative_to(Path.cwd())}")
+        print(f"Wrote {latency_path.relative_to(Path.cwd())}")
+
+    plt.close(throughput_fig)
+    plt.close(latency_fig)
+    return 0
+
+
+def load_datasets(data_dir: Path, filter_names: Iterable[str] | None) -> List[Dataset]:
+    if not data_dir.exists():
+        return []
+
+    selected = {Path(name).stem for name in filter_names} if filter_names else None
+    datasets: List[Dataset] = []
+
+    for csv_path in sorted(data_dir.glob("*.csv")):
+        if selected is not None and csv_path.stem not in selected:
+            continue
+
+        with csv_path.open(newline="") as handle:
+            reader = csv.DictReader(handle)
+            points: List[DataPoint] = []
+            label: str | None = None
+            for row in reader:
+                try:
+                    label = row.get("scenario") or label or csv_path.stem
+                    concurrency = int(float(row["concurrency"]))
+                    rps = float(row["requests_per_second"])
+                    p50 = float(row.get("p50_ms", 0.0))
+                    p95 = float(row.get("p95_ms", 0.0))
+                    p99 = float(row.get("p99_ms", 0.0))
+                except (KeyError, TypeError, ValueError) as exc:
+                    print(f"Skipping row in {csv_path.name}: {exc}", file=sys.stderr)
+                    continue
+                points.append(DataPoint(concurrency, rps, p50, p95, p99))
+
+        if not points:
+            continue
+
+        points.sort(key=lambda p: p.concurrency)
+        datasets.append(Dataset(label or csv_path.stem, csv_path, points))
+
+    return datasets
+
+
+def plot_throughput(plt, datasets: List[Dataset], title_prefix: str):
+    fig, ax = plt.subplots(figsize=(7.5, 4.5))
+    for dataset in datasets:
+        x = [point.concurrency for point in dataset.points]
+        y = [point.requests_per_second for point in dataset.points]
+        ax.plot(x, y, marker="o", label=dataset.label)
+
+    ax.set_title(f"{title_prefix} – throughput")
+    ax.set_xlabel("Concurrent requests")
+    ax.set_ylabel("Requests / second")
+    ax.grid(True, linestyle="--", linewidth=0.5, alpha=0.6)
+    ax.legend(loc="best")
+    return fig
+
+
+def plot_latency(plt, datasets: List[Dataset], title_prefix: str):
+    fig, ax = plt.subplots(figsize=(7.5, 4.5))
+    for dataset in datasets:
+        x = [point.concurrency for point in dataset.points]
+        p50 = [point.p50_ms for point in dataset.points]
+        p99 = [point.p99_ms for point in dataset.points]
+        ax.plot(x, p50, marker="o", label=f"{dataset.label} p50")
+        ax.plot(x, p99, marker="o", linestyle="--", label=f"{dataset.label} p99")
+
+    ax.set_title(f"{title_prefix} – latency")
+    ax.set_xlabel("Concurrent requests")
+    ax.set_ylabel("Latency (ms)")
+    ax.grid(True, linestyle="--", linewidth=0.5, alpha=0.6)
+    ax.legend(loc="best")
+    return fig
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
+#!/usr/bin/env python3
 """Plot Bamboo benchmark results and emit MkDocs-friendly artefacts.
 
 The utility scans one or more directories for CSV files following the
