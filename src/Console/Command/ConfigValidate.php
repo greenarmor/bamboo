@@ -4,12 +4,43 @@ declare(strict_types=1);
 
 namespace Bamboo\Console\Command;
 
+use Bamboo\Core\Application;
 use Bamboo\Core\Config;
 use Bamboo\Core\ConfigValidator;
 use Bamboo\Core\ConfigurationException;
+use InvalidArgumentException;
 
 final class ConfigValidate extends Command
 {
+    /** @var resource */
+    private $stdout;
+
+    /** @var resource */
+    private $stderr;
+
+    /**
+     * @param resource|null $stdout
+     * @param resource|null $stderr
+     */
+    public function __construct(
+        Application $app,
+        $stdout = null,
+        $stderr = null
+    ) {
+        parent::__construct($app);
+
+        if ($stdout !== null && !is_resource($stdout)) {
+            throw new InvalidArgumentException('STDOUT stream must be a resource.');
+        }
+
+        if ($stderr !== null && !is_resource($stderr)) {
+            throw new InvalidArgumentException('STDERR stream must be a resource.');
+        }
+
+        $this->stdout = $stdout ?? STDOUT;
+        $this->stderr = $stderr ?? STDERR;
+    }
+
     public function name(): string
     {
         return 'config.validate';
@@ -39,14 +70,22 @@ final class ConfigValidate extends Command
             }
             $message = implode("\n", $lines) . "\n";
 
-            fwrite(STDERR, $message);
-            echo $message;
+            $this->writeToStream($this->stderr, $message);
+            $this->writeToStream($this->stdout, $message);
 
             return 1;
         }
 
-        echo "Configuration looks good.\n";
+        $this->writeToStream($this->stdout, "Configuration looks good.\n");
 
         return 0;
+    }
+
+    /**
+     * @param resource $stream
+     */
+    private function writeToStream($stream, string $message): void
+    {
+        fwrite($stream, $message);
     }
 }

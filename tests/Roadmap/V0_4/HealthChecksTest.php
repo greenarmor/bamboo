@@ -60,6 +60,10 @@ class HealthChecksTest extends TestCase {
   }
 
   public function testGracefulShutdownMarksWorkerUnreadyBeforeExit(): void {
+    if (!OpenSwooleCompat::httpServerUsesStub()) {
+      $this->markTestSkipped('OpenSwoole test doubles are required to dispatch shutdown events.');
+    }
+
     HealthState::resetGlobal();
     $_ENV['DISABLE_HTTP_SERVER_START'] = 'true';
     $_ENV['HTTP_PORT'] = (string)PortAllocator::allocate();
@@ -73,10 +77,6 @@ class HealthChecksTest extends TestCase {
 
     $server = ServerInstrumentation::server();
     $this->assertNotNull($server);
-
-    if (!OpenSwooleCompat::httpServerUsesStub()) {
-      $this->markTestSkipped('OpenSwoole test doubles are required to dispatch shutdown events.');
-    }
 
     $server->trigger('shutdown');
 

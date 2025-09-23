@@ -9,6 +9,10 @@ use Bamboo\Core\Application;
 use Bamboo\Core\Config;
 use PHPUnit\Framework\TestCase;
 use Tests\Support\ArrayConfig;
+use function fclose;
+use function fopen;
+use function rewind;
+use function stream_get_contents;
 
 final class ConfigValidateCommandTest extends TestCase
 {
@@ -16,14 +20,30 @@ final class ConfigValidateCommandTest extends TestCase
     {
         $app = new Application(new Config(dirname(__DIR__, 2) . '/etc'));
 
-        $command = new ConfigValidate($app);
+        $stdout = fopen('php://temp', 'w+');
+        $stderr = fopen('php://temp', 'w+');
 
-        ob_start();
-        $exitCode = $command->handle([]);
-        $output = ob_get_clean();
+        $this->assertIsResource($stdout);
+        $this->assertIsResource($stderr);
+
+        try {
+            $command = new ConfigValidate($app, $stdout, $stderr);
+
+            $exitCode = $command->handle([]);
+
+            rewind($stdout);
+            rewind($stderr);
+
+            $output = stream_get_contents($stdout) ?: '';
+            $errorOutput = stream_get_contents($stderr) ?: '';
+        } finally {
+            fclose($stdout);
+            fclose($stderr);
+        }
 
         $this->assertSame(0, $exitCode);
         $this->assertStringContainsString('Configuration looks good.', $output);
+        $this->assertSame('', $errorOutput);
     }
 
     public function testInvalidConfigurationReportsErrors(): void
@@ -34,13 +54,29 @@ final class ConfigValidateCommandTest extends TestCase
 
         $app = new Application(new ArrayConfig($overrides));
 
-        $command = new ConfigValidate($app);
+        $stdout = fopen('php://temp', 'w+');
+        $stderr = fopen('php://temp', 'w+');
 
-        ob_start();
-        $exitCode = $command->handle([]);
-        $output = ob_get_clean();
+        $this->assertIsResource($stdout);
+        $this->assertIsResource($stderr);
+
+        try {
+            $command = new ConfigValidate($app, $stdout, $stderr);
+
+            $exitCode = $command->handle([]);
+
+            rewind($stdout);
+            rewind($stderr);
+
+            $output = stream_get_contents($stdout) ?: '';
+            $errorOutput = stream_get_contents($stderr) ?: '';
+        } finally {
+            fclose($stdout);
+            fclose($stderr);
+        }
 
         $this->assertSame(1, $exitCode);
         $this->assertStringContainsString('server.host must be a non-empty string.', $output);
+        $this->assertStringContainsString('server.host must be a non-empty string.', $errorOutput);
     }
 }
