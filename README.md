@@ -68,6 +68,13 @@ documentation deliverables are tracked in
 [`docs/roadmap/v1.0-prep.md`](docs/roadmap/v1.0-prep.md) so the community can
 monitor checklist progress toward the stable milestone.
 
+To kick off the v1.0 documentation sprint, stub workspaces now live under
+`docs/cli/`, `docs/router.md`, `docs/modules.md`, `docs/configuration/`,
+`docs/upgrade/v1.0.md`, `docs/benchmarks/`, and `docs/starters/`. Each file is a
+task list mirroring the freeze checklist, making it easier for contributors to
+claim work, stage drafts, and cross-link new material as the release candidate
+takes shape.
+
 ## CLI
 http.serve, routes.show, routes.cache, cache.purge, app.key.make,
 queue.work, ws.serve, dev.watch, schedule.run, pkg.info, client.call
