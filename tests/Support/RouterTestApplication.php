@@ -8,9 +8,15 @@ final class RouterTestApplication extends Application
 {
     private Router $routerInstance;
 
-    /** @var array<int, array{0:string,1:string,2:callable|array|\Bamboo\Core\RouteDefinition,3?:array,4?:array}> */
+    /**
+     * @var list<array{0:string,1:string,2:callable|array<int|string, mixed>|\Bamboo\Core\RouteDefinition,3?:list<string>,4?:list<string>}> 
+     */
     private array $definitions;
 
+    /**
+     * @param list<array{0:string,1:string,2:callable|array<int|string, mixed>|\Bamboo\Core\RouteDefinition,3?:list<string>,4?:list<string>}> $definitions
+     * @param array<string, mixed> $configOverrides
+     */
     public function __construct(array $definitions = [], array $configOverrides = [])
     {
         $this->routerInstance = new Router();
@@ -21,6 +27,9 @@ final class RouterTestApplication extends Application
         parent::__construct(new ArrayConfig($config));
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     public static function baseConfiguration(): array
     {
         return [
@@ -62,6 +71,10 @@ final class RouterTestApplication extends Application
 
         foreach ($this->definitions as $definition) {
             [$method, $path, $handler, $middleware, $middlewareGroups] = array_pad($definition, 5, []);
+            /** @var list<string> $middleware */
+            $middleware = $middleware;
+            /** @var list<string> $middlewareGroups */
+            $middlewareGroups = $middlewareGroups;
             $router->{strtolower($method)}($path, $handler, $middleware, $middlewareGroups);
         }
     }

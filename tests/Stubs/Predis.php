@@ -8,6 +8,9 @@ use Predis\Connection\ParametersInterface;
 
 final class PredisFakeServer
 {
+    /**
+     * @var array<string, list<string>>
+     */
     private static array $queues = [];
 
     public static function reset(): void
@@ -29,6 +32,9 @@ final class PredisFakeServer
         return array_shift(self::$queues[$queue]);
     }
 
+    /**
+     * @return list<string>
+     */
     public static function dumpQueue(string $queue): array
     {
         return self::$queues[$queue] ?? [];
@@ -37,6 +43,7 @@ final class PredisFakeServer
 
 final class PredisMemoryConnection extends AbstractConnection
 {
+    /** @var array{0:string,1:string}|int|null */
     private $lastResponse = null;
 
     protected function assertParameters(ParametersInterface $parameters)

@@ -4,9 +4,13 @@ namespace Bamboo\Core;
 use Bamboo\Module\ModuleInterface;
 use Bamboo\Web\Kernel;
 use Bamboo\Web\RequestContext;
+use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface as Request;
 
 class Application extends Container {
+  /**
+   * @var list<ModuleInterface>
+   */
   protected array $modules = [];
   public function __construct(protected Config $config) {
     $this->singleton(Config::class, fn() => $config);
@@ -25,9 +29,9 @@ class Application extends Container {
       }
       return;
     }
-    require dirname(__DIR__,2).'/routes/http.php';
+    require dirname(__DIR__, 2) . '/routes/http.php';
   }
-  public function handle(Request $request) {
+  public function handle(Request $request): ResponseInterface {
     $context = new RequestContext();
     $context->merge([
       'method' => $request->getMethod(),
@@ -105,9 +109,13 @@ class Application extends Container {
     return $ref->newInstanceArgs($args);
   }
   public function register($provider): void { $provider->register($this); }
+  /**
+   * @param list<class-string<ModuleInterface>> $moduleClasses
+   */
   public function bootModules(array $moduleClasses): void {
     if ($moduleClasses === []) return;
     $config = $this->get(Config::class);
+    /** @var list<ModuleInterface> $instances */
     $instances = [];
     foreach ($moduleClasses as $moduleClass) {
       if (!is_string($moduleClass) || $moduleClass === '') {

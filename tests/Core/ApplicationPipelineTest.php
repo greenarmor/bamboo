@@ -17,13 +17,14 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface as Request;
 
 class PipelineRecorder {
+  /** @var list<string> */
   public static array $events = [];
 
   public static function reset(): void { self::$events = []; }
 }
 
 class AlphaMiddleware {
-  public function handle(Request $request, \Closure $next) {
+  public function handle(Request $request, \Closure $next): ResponseInterface {
     PipelineRecorder::$events[] = 'alpha:before';
     $response = $next($request->withAttribute('alpha', true));
     PipelineRecorder::$events[] = 'alpha:after';
@@ -32,7 +33,7 @@ class AlphaMiddleware {
 }
 
 class BetaMiddleware {
-  public function handle(Request $request, \Closure $next) {
+  public function handle(Request $request, \Closure $next): ResponseInterface {
     PipelineRecorder::$events[] = 'beta:before';
     $response = $next($request->withAttribute('beta', true));
     PipelineRecorder::$events[] = 'beta:after';
@@ -41,7 +42,7 @@ class BetaMiddleware {
 }
 
 class GammaMiddleware {
-  public function handle(Request $request, \Closure $next) {
+  public function handle(Request $request, \Closure $next): ResponseInterface {
     PipelineRecorder::$events[] = 'gamma:before';
     $response = $next($request->withAttribute('gamma', true));
     PipelineRecorder::$events[] = 'gamma:after';
@@ -50,7 +51,7 @@ class GammaMiddleware {
 }
 
 class DeltaMiddleware {
-  public function handle(Request $request, \Closure $next) {
+  public function handle(Request $request, \Closure $next): ResponseInterface {
     PipelineRecorder::$events[] = 'delta:before';
     $response = $next($request->withAttribute('delta', true));
     PipelineRecorder::$events[] = 'delta:after';
@@ -59,7 +60,7 @@ class DeltaMiddleware {
 }
 
 class TerminableAlphaMiddleware {
-  public function handle(Request $request, \Closure $next) {
+  public function handle(Request $request, \Closure $next): ResponseInterface {
     PipelineRecorder::$events[] = 'terminable-alpha:before';
     $request = $request->withAttribute('terminable-alpha', 'set');
     $response = $next($request);
@@ -77,7 +78,7 @@ class TerminableAlphaMiddleware {
 }
 
 class TerminableBetaMiddleware {
-  public function handle(Request $request, \Closure $next) {
+  public function handle(Request $request, \Closure $next): ResponseInterface {
     PipelineRecorder::$events[] = 'terminable-beta:before';
     $request = $request->withAttribute('terminable-beta', 'set');
     $response = $next($request);
@@ -96,10 +97,19 @@ class TerminableBetaMiddleware {
 }
 
 class ArrayConfig extends Config {
+  /**
+   * @param array<string, mixed> $configuration
+   */
   public function __construct(private array $configuration) { parent::__construct(''); }
 
+  /**
+   * @return array<string, mixed>
+   */
   protected function loadConfiguration(): array { return $this->configuration; }
 
+  /**
+   * @param array<string, mixed> $middleware
+   */
   public function setMiddleware(array $middleware): void {
     $this->configuration['middleware'] = $middleware;
     $this->items['middleware'] = $middleware;
@@ -117,6 +127,9 @@ class ApplicationPipelineTest extends TestCase {
     PipelineRecorder::reset();
   }
 
+  /**
+   * @param array<string, mixed> $middleware
+   */
   private function baseConfig(array $middleware, ?string $routeCachePath = null): ArrayConfig {
     $dir = dirname(__DIR__, 2) . '/etc';
 
@@ -138,13 +151,13 @@ class ApplicationPipelineTest extends TestCase {
     return new ArrayConfig($items);
   }
 
-    private function createApp(Config $config): Application {
-        $app = new Application($config);
-        $app->register(new AppProvider());
-        $app->register(new MetricsProvider());
-        $app->register(new ResilienceProvider());
-        return $app;
-    }
+  private function createApp(Config $config): Application {
+    $app = new Application($config);
+    $app->register(new AppProvider());
+    $app->register(new MetricsProvider());
+    $app->register(new ResilienceProvider());
+    return $app;
+  }
 
   public function testMiddlewarePipelineResolvesConfiguredOrder(): void {
     $middleware = [

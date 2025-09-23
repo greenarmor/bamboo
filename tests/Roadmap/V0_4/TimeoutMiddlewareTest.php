@@ -33,7 +33,7 @@ class TimeoutMiddlewareTest extends TestCase {
 
     $response = $middleware->handle($request, function() {
       usleep(20000); // 20ms
-      return new Response(200, ['Content-Type' => 'application/json'], json_encode(['ok' => true]));
+      return new Response(200, ['Content-Type' => 'application/json'], json_encode(['ok' => true], JSON_THROW_ON_ERROR));
     });
 
     $this->assertSame(504, $response->getStatusCode());

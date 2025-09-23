@@ -65,7 +65,7 @@ class ApplicationRoutesTest extends TestCase {
   public function testEchoRouteReturnsPostedJson(): void {
     $app = $this->createApp();
     $psr17 = new Psr17Factory();
-    $body = $psr17->createStream(json_encode(['ok' => true]));
+    $body = $psr17->createStream(json_encode(['ok' => true], JSON_THROW_ON_ERROR));
     $request = (new ServerRequest('POST', '/api/echo'))->withBody($body);
     $response = $app->handle($request);
 
@@ -77,7 +77,7 @@ class ApplicationRoutesTest extends TestCase {
   public function testJobRouteEnqueuesPayload(): void {
     $app = $this->createApp();
     $psr17 = new Psr17Factory();
-    $payload = json_encode(['task' => 'demo']);
+    $payload = json_encode(['task' => 'demo'], JSON_THROW_ON_ERROR);
     $request = (new ServerRequest('POST', '/api/jobs'))->withBody($psr17->createStream($payload));
 
     $response = $app->handle($request);
@@ -118,7 +118,7 @@ class ApplicationRoutesTest extends TestCase {
     $router->get('/test/two/{value}', function(ServerRequest $request, array $vars) use (&$capturedRequest, &$capturedVars) {
       $capturedRequest = $request;
       $capturedVars = $vars;
-      return new Response(200, ['Content-Type' => 'application/json'], json_encode(['value' => $vars['value'] ?? null]));
+      return new Response(200, ['Content-Type' => 'application/json'], json_encode(['value' => $vars['value'] ?? null], JSON_THROW_ON_ERROR));
     });
 
     $request = new ServerRequest('GET', '/test/two/demo');

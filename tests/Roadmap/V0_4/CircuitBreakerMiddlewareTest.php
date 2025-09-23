@@ -64,7 +64,7 @@ class CircuitBreakerMiddlewareTest extends TestCase {
 
     $now = 0.2; // advance beyond cooldown
     $response = $middleware->handle($request, function() {
-      return new Response(200, ['Content-Type' => 'application/json'], json_encode(['ok' => true]));
+      return new Response(200, ['Content-Type' => 'application/json'], json_encode(['ok' => true], JSON_THROW_ON_ERROR));
     });
 
     $this->assertSame(200, $response->getStatusCode());

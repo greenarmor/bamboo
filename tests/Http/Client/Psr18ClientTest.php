@@ -12,11 +12,15 @@ use Psr\Http\Message\ResponseInterface;
 use Tests\Stubs\OpenSwooleHook;
 
 class RecordingPsr18Client implements Psr18 {
-  /** @var array<int, ResponseInterface|\Throwable> */
+  /** @var list<ResponseInterface|\Throwable> */
   private array $queue;
-  /** @var RequestInterface[] */
+
+  /** @var list<RequestInterface> */
   public array $requests = [];
 
+  /**
+   * @param list<ResponseInterface|\Throwable> $queue
+   */
   public function __construct(array $queue) {
     $this->queue = $queue;
   }

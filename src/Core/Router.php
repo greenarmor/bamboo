@@ -6,31 +6,70 @@ use FastRoute\Dispatcher;
 use FastRoute\RouteCollector;
 use function FastRoute\simpleDispatcher;
 use Nyholm\Psr7\Response;
+use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface as Request;
 
+/**
+ * @phpstan-type RouteHandler callable|callable-string|array{0: object|class-string, 1: string}
+ * @phpstan-type RouteDefinitionArray array{
+ *     handler: RouteHandler,
+ *     middleware: list<string>,
+ *     middleware_groups: list<string>,
+ *     signature: string,
+ * }
+ * @phpstan-type RouteMap array<string, array<string, RouteDefinitionArray>>
+ */
 class Router {
+  /**
+   * @var RouteMap
+   */
   protected array $routes = [];
 
+  /**
+   * @param callable|array<int|string, mixed>|RouteDefinition $action
+   * @param list<string> $middleware
+   * @param list<string> $middlewareGroups
+   */
   public function addRoute(string $method, string $path, callable|array|RouteDefinition $action, array $middleware = [], array $middlewareGroups = []): void {
     $method = strtoupper($method);
     $this->routes[$method][$path] = $this->normalizeRoute($method, $path, $action, $middleware, $middlewareGroups);
   }
 
+  /**
+   * @param callable|array<int|string, mixed>|RouteDefinition $action
+   * @param list<string> $middleware
+   * @param list<string> $middlewareGroups
+   */
   public function get(string $path, callable|array|RouteDefinition $action, array $middleware = [], array $middlewareGroups = []): void {
     $this->addRoute('GET', $path, $action, $middleware, $middlewareGroups);
   }
 
+  /**
+   * @param callable|array<int|string, mixed>|RouteDefinition $action
+   * @param list<string> $middleware
+   * @param list<string> $middlewareGroups
+   */
   public function post(string $path, callable|array|RouteDefinition $action, array $middleware = [], array $middlewareGroups = []): void {
     $this->addRoute('POST', $path, $action, $middleware, $middlewareGroups);
   }
 
+  /**
+   * @param RouteDefinitionArray $definition
+   * @return list<string>
+   */
   public function gatherMiddleware(array $definition): array {
     $groups = $definition['middleware_groups'] ?? [];
     $route = $definition['middleware'] ?? [];
     return array_values(array_merge($groups, $route));
   }
+  /**
+   * @return RouteMap
+   */
   public function all(): array { return $this->routes; }
 
+  /**
+   * @return void
+   */
   public function cacheTo(string $file): void {
     $closures = [];
     foreach ($this->routes as $method => $paths) {
@@ -60,6 +99,14 @@ class Router {
     return false;
   }
 
+  /**
+   * @return array{
+   *     status: int,
+   *     allowed?: list<string>,
+   *     route?: RouteDefinitionArray,
+   *     vars?: array<string, string>
+   * }
+   */
   public function match(Request $request): array {
     $dispatcher = simpleDispatcher(function(RouteCollector $r) {
       foreach ($this->routes as $method => $map) {
@@ -86,21 +133,32 @@ class Router {
     };
   }
 
-  public function dispatch(Request $request, Application $app) {
+  public function dispatch(Request $request, Application $app): ResponseInterface {
     $match = $this->match($request);
     return $this->toResponse($match, $request, $app);
   }
 
-  public function toResponse(array $match, Request $request, Application $app) {
+  /**
+   * @param array{
+   *     status: int,
+   *     route?: RouteDefinitionArray,
+   *     vars?: array<string, string>,
+   *     allowed?: list<string>
+   * } $match
+   */
+  public function toResponse(array $match, Request $request, Application $app): ResponseInterface {
     switch ($match['status']) {
       case Dispatcher::NOT_FOUND:
-        return new Response(404, ['Content-Type' => 'application/json'], json_encode(['error' => 'Not Found']));
+        return new Response(404, ['Content-Type' => 'application/json'], json_encode(['error' => 'Not Found'], JSON_THROW_ON_ERROR));
       case Dispatcher::METHOD_NOT_ALLOWED:
-        return new Response(405, ['Content-Type' => 'application/json'], json_encode(['error' => 'Method Not Allowed']));
+        return new Response(405, ['Content-Type' => 'application/json'], json_encode(['error' => 'Method Not Allowed'], JSON_THROW_ON_ERROR));
       case Dispatcher::FOUND:
-        $definition = $match['route'];
+        $definition = $match['route'] ?? null;
+        if ($definition === null) {
+          throw new \LogicException('Matched route missing definition.');
+        }
         $handler = $definition['handler'];
-        $vars = $match['vars'];
+        $vars = $match['vars'] ?? [];
         if (is_array($handler) && !isset($handler['handler'])) {
           [$cls, $meth] = $handler;
           $ctrl = new $cls($app);
@@ -114,9 +172,15 @@ class Router {
         return $callable(...$arguments);
     }
 
-    return new Response(500, ['Content-Type' => 'application/json'], json_encode(['error' => 'Routing failure']));
+    return new Response(500, ['Content-Type' => 'application/json'], json_encode(['error' => 'Routing failure'], JSON_THROW_ON_ERROR));
   }
 
+  /**
+   * @param callable|array<int|string, mixed>|RouteDefinition $action
+   * @param list<string> $middleware
+   * @param list<string> $middlewareGroups
+   * @return RouteDefinitionArray
+   */
   private function normalizeRoute(string $method, string $path, callable|array|RouteDefinition $action, array $middleware = [], array $middlewareGroups = []): array {
     $handler = $action instanceof RouteDefinition ? $action->handler : $action;
     $signature = $action instanceof RouteDefinition ? $action->signature : null;
@@ -149,6 +213,9 @@ class Router {
     ];
   }
 
+  /**
+   * @return list<string>
+   */
   private function normalizeMiddleware(mixed $middleware): array {
     if ($middleware === null) return [];
     if ($middleware instanceof \Traversable) {
@@ -164,6 +231,10 @@ class Router {
     return array_keys($array) !== range(0, count($array) - 1);
   }
 
+  /**
+   * @param array<string, string> $vars
+   * @return list<mixed>
+   */
   private function resolveCallableArguments(callable $handler, Request $request, array $vars, Application $app): array {
     $reflection = $this->reflectCallable($handler);
     $available = [
@@ -195,6 +266,10 @@ class Router {
     return new \ReflectionFunction($handler);
   }
 
+  /**
+   * @param array<string, mixed> $available
+   * @param array<string, bool> $used
+   */
   private function matchParameter(\ReflectionParameter $parameter, array $available, array &$used): mixed {
     $type = $parameter->getType();
     if ($type instanceof \ReflectionNamedType) {
@@ -231,6 +306,10 @@ class Router {
     return null;
   }
 
+  /**
+   * @param array<string, mixed> $available
+   * @param array<string, bool> $used
+   */
   private function nextAvailableDefault(array $available, array &$used): mixed {
     foreach (['request', 'vars', 'app'] as $key) {
       if (!$used[$key]) {

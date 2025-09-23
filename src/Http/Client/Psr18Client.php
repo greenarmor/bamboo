@@ -17,11 +17,16 @@ final class Psr18Client implements ClientInterface {
     return $this->withRetry(fn() => $this->client->sendRequest($req));
   }
 
+  /**
+   * @param list<RequestInterface> $requests
+   * @return list<ResponseInterface>
+   */
   public function sendConcurrent(array $requests): array {
     if ($requests === []) {
       return [];
     }
 
+    /** @var array<int, ResponseInterface> $responses */
     $responses = [];
     $runner = function () use (&$responses, $requests): void {
       $wg = new \OpenSwoole\Coroutine\WaitGroup();
@@ -32,7 +37,7 @@ final class Psr18Client implements ClientInterface {
             $responses[$index] = $this->send($request);
           } catch (\Throwable $e) {
             $responses[$index] = (new Psr17Factory())->createResponse(599)->withBody(
-              (new Psr17Factory())->createStream(json_encode(['error' => $e->getMessage()]))
+              (new Psr17Factory())->createStream(json_encode(['error' => $e->getMessage()], JSON_THROW_ON_ERROR))
             );
           } finally {
             $wg->done();
@@ -41,18 +46,19 @@ final class Psr18Client implements ClientInterface {
       }
       $wg->wait();
       ksort($responses);
+      $responses = array_values($responses);
     };
 
     if (method_exists(\OpenSwoole\Coroutine::class, 'getCid') && \OpenSwoole\Coroutine::getCid() >= 0) {
       $runner();
-      return $responses;
+      return array_values($responses);
     }
 
     \OpenSwoole\Coroutine::run(function () use (&$responses, $runner): void {
       $runner();
     });
 
-    return $responses;
+    return array_values($responses);
   }
 
   private function applyDefaults(RequestInterface $r): RequestInterface {

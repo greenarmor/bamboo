@@ -8,6 +8,7 @@ use PHPUnit\Framework\TestCase;
 use Tests\Support\RouterTestApplication;
 
 class RouterCacheTest extends TestCase {
+  /** @var list<string> */
   private array $tempFiles = [];
 
   protected function tearDown(): void {
@@ -61,6 +62,9 @@ class RouterCacheTest extends TestCase {
     ob_start();
     $exitCode = $command->handle([]);
     $output = ob_get_clean();
+    if ($output === false) {
+      $output = '';
+    }
     $this->assertSame(1, $exitCode);
     $this->assertStringContainsString('Routes not cached: Cannot cache routes containing closures: GET /closure', $output);
     $this->assertFileDoesNotExist($cacheFile);
@@ -75,6 +79,9 @@ class RouterCacheTest extends TestCase {
     ob_start();
     $exitCode = $command->handle([]);
     $output = ob_get_clean();
+    if ($output === false) {
+      $output = '';
+    }
     $this->assertSame(0, $exitCode);
     $this->assertStringContainsString("Routes cached -> {$cacheFile}", $output);
     $this->assertFileExists($cacheFile);

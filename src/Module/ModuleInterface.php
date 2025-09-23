@@ -6,6 +6,16 @@ namespace Bamboo\Module;
 
 use Bamboo\Core\Application;
 
+/**
+ * @phpstan-type MiddlewareList list<string>
+ * @phpstan-type MiddlewareGroups array<string, MiddlewareList>
+ * @phpstan-type MiddlewareAliases array<string, string>
+ * @phpstan-type ModuleMiddleware array{
+ *     global?: MiddlewareList,
+ *     groups?: MiddlewareGroups,
+ *     aliases?: MiddlewareAliases,
+ * }
+ */
 interface ModuleInterface
 {
     /**
@@ -21,7 +31,7 @@ interface ModuleInterface
     /**
      * Optionally contribute middleware aliases or stacks.
      *
-     * @return array<string, array<int, string>|string>
+     * @return ModuleMiddleware
      */
     public function middleware(): array;
 }

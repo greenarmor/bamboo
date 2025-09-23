@@ -18,6 +18,9 @@ class RoutesShowCommandTest extends TestCase {
     ob_start();
     $exitCode = $command->handle([]);
     $output = ob_get_clean();
+    if ($output === false) {
+      $output = '';
+    }
 
     $this->assertSame(0, $exitCode);
     $this->assertStringContainsString('GET    /users', $output);

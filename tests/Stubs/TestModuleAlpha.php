@@ -21,6 +21,13 @@ class TestModuleAlpha implements ModuleInterface
         ModuleLifecycleLog::record(static::class, 'boot');
     }
 
+    /**
+     * @return array{
+     *     global: list<string>,
+     *     groups: array<string, list<string>>,
+     *     aliases: array<string, string>,
+     * }
+     */
     public function middleware(): array
     {
         return [

@@ -2,6 +2,8 @@
 
 use Bamboo\Core\RouteDefinition;
 
+/** @var Bamboo\Core\Application $this */
+
 /** @var Bamboo\Core\Router $router */
 $router = $this->get('router');
 

@@ -12,6 +12,7 @@ use Psr\Http\Message\ResponseInterface;
 use Tests\Support\RouterTestApplication;
 
 class StubPsr18Client implements Psr18 {
+  /** @var list<RequestInterface> */
   public array $requests = [];
 
   public function sendRequest(RequestInterface $request): ResponseInterface {

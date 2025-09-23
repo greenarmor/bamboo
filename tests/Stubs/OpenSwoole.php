@@ -3,7 +3,10 @@ namespace Tests\Stubs;
 
 final class OpenSwooleHook
 {
+    /** @var list<float> */
     public static array $sleeps = [];
+
+    /** @var list<int> */
     public static array $microSleeps = [];
 
     public static function reset(): void
@@ -18,6 +21,7 @@ namespace OpenSwoole;
 if (!class_exists(__NAMESPACE__ . '\\Coroutine')) {
     class Coroutine
     {
+        /** @var list<callable> */
         public static array $created = [];
         private static int $nextCid = 1;
         private static int $currentCid = -1;
@@ -64,6 +68,19 @@ if (!class_exists(__NAMESPACE__ . '\\Coroutine')) {
     }
 }
 
+if (!class_exists(__NAMESPACE__ . '\\Server')) {
+    class Server
+    {
+        /** @var array<string, callable> */
+        protected array $listeners = [];
+
+        public function on(string $event, callable $handler): void
+        {
+            $this->listeners[$event] = $handler;
+        }
+    }
+}
+
 namespace OpenSwoole\Coroutine;
 
 if (!class_exists(__NAMESPACE__ . '\\WaitGroup')) {
@@ -100,7 +117,10 @@ if (!class_exists(__NAMESPACE__ . '\\Server')) {
     {
         public static ?Server $lastInstance = null;
 
+        /** @var array<string, mixed> */
         public array $settings = [];
+
+        /** @var array<string, callable> */
         public array $listeners = [];
         public bool $started = false;
 
@@ -109,6 +129,9 @@ if (!class_exists(__NAMESPACE__ . '\\Server')) {
             self::$lastInstance = $this;
         }
 
+        /**
+         * @param array<string, mixed> $settings
+         */
         public function set(array $settings): void
         {
             $this->settings = $settings;
@@ -127,7 +150,7 @@ if (!class_exists(__NAMESPACE__ . '\\Server')) {
             }
         }
 
-        public function trigger(string $event, ...$args): mixed
+        public function trigger(string $event, mixed ...$args): mixed
         {
             if (!isset($this->listeners[$event])) {
                 return null;
@@ -141,15 +164,36 @@ if (!class_exists(__NAMESPACE__ . '\\Server')) {
 if (!class_exists(__NAMESPACE__ . '\\Request')) {
     class Request
     {
+        /** @var array<string, mixed> */
         public array $server = [];
+
+        /** @var array<string, mixed> */
         public array $get = [];
+
+        /** @var array<string, mixed> */
         public array $post = [];
+
+        /** @var array<string, string|string[]> */
+        public array $header = [];
+
+        private string $rawContent = '';
+
+        public function rawContent(): string
+        {
+            return $this->rawContent;
+        }
+
+        public function setRawContent(string $content): void
+        {
+            $this->rawContent = $content;
+        }
     }
 }
 
 if (!class_exists(__NAMESPACE__ . '\\Response')) {
     class Response
     {
+        /** @var array<string, string> */
         public array $headers = [];
         public int $status = 200;
         public string $body = '';

@@ -4,6 +4,9 @@ namespace Bamboo\Console\Command;
 class QueueWork extends Command {
   public function name(): string { return 'queue.work'; }
   public function description(): string { return 'Start a Redis-backed worker (BLPOP)'; }
+  /**
+   * @param list<string> $args
+   */
   public function handle(array $args): int {
     $cfg = $this->app->config('redis');
     $queue = $cfg['queue'];
@@ -32,6 +35,9 @@ class QueueWork extends Command {
     return 0;
   }
 
+  /**
+   * @param list<string> $args
+   */
   private function parseMaxJobs(array $args): ?int {
     $maxJobs = null;
 

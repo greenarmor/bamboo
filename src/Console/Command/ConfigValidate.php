@@ -20,6 +20,9 @@ final class ConfigValidate extends Command
         return 'Validate etc/ configuration against the v1.0 contract';
     }
 
+    /**
+     * @param list<string> $args
+     */
     public function handle(array $args): int
     {
         $config = $this->app->get(Config::class);

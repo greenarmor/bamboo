@@ -1,13 +1,30 @@
 <?php
 namespace Bamboo\Core;
 
+/**
+ * @phpstan-import-type ModuleMiddleware from \Bamboo\Module\ModuleInterface
+ * @phpstan-type MiddlewareList list<string>
+ * @phpstan-type MiddlewareGroups array<string, MiddlewareList>
+ * @phpstan-type MiddlewareAliases array<string, string>
+ * @phpstan-type NormalizedMiddleware array{
+ *     global: MiddlewareList,
+ *     groups: MiddlewareGroups,
+ *     aliases: MiddlewareAliases,
+ * }
+ */
 class Config {
+  /**
+   * @var array<string, mixed>
+   */
   protected array $items = [];
 
   public function __construct(protected string $dir) {
     $this->items = $this->loadConfiguration();
   }
 
+  /**
+   * @return array<string, mixed>
+   */
   public function all(): array {
     return $this->items;
   }
@@ -23,17 +40,22 @@ class Config {
     return $value;
   }
 
+  /**
+   * @param ModuleMiddleware $contribution
+   */
   public function mergeMiddleware(array $contribution): void {
     if ($contribution === []) return;
 
     $middleware = $this->items['middleware'] ?? [];
     if (!is_array($middleware)) $middleware = [];
 
+    /** @var MiddlewareList $global */
     $global = $this->normalizeMiddlewareList($middleware['global'] ?? []);
     if (array_key_exists('global', $contribution)) {
       $global = array_merge($global, $this->normalizeMiddlewareList($contribution['global']));
     }
 
+    /** @var MiddlewareGroups $groups */
     $groups = [];
     if (isset($middleware['groups']) && is_array($middleware['groups'])) {
       foreach ($middleware['groups'] as $name => $entries) {
@@ -50,6 +72,7 @@ class Config {
       }
     }
 
+    /** @var MiddlewareAliases $aliases */
     $aliases = [];
     if (isset($middleware['aliases']) && is_array($middleware['aliases'])) {
       foreach ($middleware['aliases'] as $alias => $target) {
@@ -73,13 +96,18 @@ class Config {
       }
     }
 
-    $this->items['middleware'] = [
+    /** @var NormalizedMiddleware $normalized */
+    $normalized = [
       'global' => array_values($global),
       'groups' => array_map(static fn(array $entries) => array_values($entries), $groups),
       'aliases' => $aliases,
     ];
+    $this->items['middleware'] = $normalized;
   }
 
+  /**
+   * @return array<string, mixed>
+   */
   protected function loadConfiguration(): array {
     return [
       'app'     => require $this->dir . '/app.php',
@@ -118,6 +146,9 @@ class Config {
     ];
   }
 
+  /**
+   * @return MiddlewareList
+   */
   protected function normalizeMiddlewareList(mixed $middleware): array {
     if ($middleware === null) return [];
     if ($middleware instanceof \Traversable) {

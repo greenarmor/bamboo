@@ -9,6 +9,7 @@ use Bamboo\Provider\AppProvider;
 use Bamboo\Provider\MetricsProvider;
 use Bamboo\Web\RequestContext;
 use Monolog\Handler\TestHandler;
+use Monolog\LogRecord;
 use Nyholm\Psr7\Response;
 use Nyholm\Psr7\ServerRequest;
 use PHPUnit\Framework\TestCase;
@@ -63,10 +64,15 @@ class RequestIdMiddlewareTest extends TestCase {
     $logger->info('testing');
 
     $this->assertTrue($handler->hasInfoRecords());
+    /** @var list<LogRecord> $records */
     $records = $handler->getRecords();
-    $this->assertSame($generatedId, $records[0]['extra']['request']['id'] ?? null);
-    $this->assertSame('GET', $records[0]['extra']['request']['method'] ?? null);
-    $this->assertSame('GET /logger', $records[0]['extra']['request']['route'] ?? null);
+    $record = $records[0] ?? null;
+    $this->assertNotNull($record);
+    $requestExtra = $record->extra['request'] ?? null;
+    $this->assertIsArray($requestExtra);
+    $this->assertSame($generatedId, $requestExtra['id'] ?? null);
+    $this->assertSame('GET', $requestExtra['method'] ?? null);
+    $this->assertSame('GET /logger', $requestExtra['route'] ?? null);
   }
 
   public function testConcurrentRequestsReceiveDistinctIds(): void {
