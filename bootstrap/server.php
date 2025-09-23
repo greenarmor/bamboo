@@ -19,13 +19,13 @@ $server->set([
   'max_request' => $app->config('server.max_requests'),
 ]);
 
-$server->on('start', function() use ($host, $port, $health){
+$server->on('start', ServerInstrumentation::registerListener('start', function () use ($host, $port, $health): void {
   ServerInstrumentation::markStarted();
   if ($health) {
     $health->markReady();
   }
   echo "Bamboo HTTP online at http://{$host}:{$port}\n";
-});
+}));
 
 $server->on('request', function(OpenSwoole\HTTP\Request $req, OpenSwoole\HTTP\Response $res) use ($app) {
   $psr = Bamboo\Core\Helpers::toPsrRequest($req);
@@ -47,20 +47,19 @@ $server->on('finish', function (OpenSwoole\Server $server, int $taskId, mixed $d
 });
 
 if ($health) {
-  $server->on('workerStop', function() use ($health): void {
+  $server->on('workerStop', ServerInstrumentation::registerListener('workerStop', function () use ($health): void {
     $health->markShuttingDown();
-  });
+  }));
 
-  $server->on('shutdown', function() use ($health): void {
+  $server->on('shutdown', ServerInstrumentation::registerListener('shutdown', function () use ($health): void {
     $health->markShuttingDown();
-  });
+  }));
 }
 
 $disableStart = filter_var($_ENV['DISABLE_HTTP_SERVER_START'] ?? false, FILTER_VALIDATE_BOOLEAN);
 
 if ($disableStart) {
-  ServerInstrumentation::markStarted();
-  echo "Bamboo HTTP online at http://{$host}:{$port}\n";
+  ServerInstrumentation::trigger('start');
   return;
 }
 
