@@ -51,6 +51,12 @@ results and metadata so charts can be regenerated later.
 - Never overwrite historical CSV files; new runs should append rows to existing
   files or create new timestamped files.
 
+### Available datasets
+
+- `docs/benchmarks/data/20240528-baseline.csv` &mdash; Initial cold-cache
+  baseline captured for the v1.0.0 release, with metadata in
+  `docs/benchmarks/data/20240528-baseline.md`.
+
 ### CSV schema
 
 The harness writes the following columns:

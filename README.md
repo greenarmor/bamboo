@@ -139,6 +139,7 @@ Composer scripts:
 
 ```bash
 composer validate --strict   # verify composer.json/composer.lock structure
+composer validate:config     # assert etc/ configuration matches the schema
 composer lint                # run PHP CS Fixer in dry-run mode
 composer stan                # execute PHPStan (level 8, baseline enforced)
 composer test                # run the full PHPUnit suite
@@ -153,9 +154,10 @@ baseline in sync.
 
 `.github/workflows/ci.yml` runs on every push and pull request across a PHP
 8.2/8.3/8.4 matrix. Each job installs OpenSwoole, caches Composer and PHPUnit
-artifacts, and then executes Composer validation, PHP CS Fixer (dry run),
-PHPStan, and PHPUnit. On failure the workflow uploads collected logs and cache
-artifacts for triage. Check the GitHub Actions tab for the latest status.
+artifacts, validates the configuration schema, and then executes Composer
+validation, PHP CS Fixer (dry run), PHPStan, and PHPUnit. On failure the
+workflow uploads collected logs and cache artifacts for triage. Check the GitHub
+Actions tab for the latest status.
 
 ## Static site publishing requirements
 
