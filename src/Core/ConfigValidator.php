@@ -109,6 +109,14 @@ class ConfigValidator
             }
         }
 
+        if (isset($config['resilience'])) {
+            if (!is_array($config['resilience'])) {
+                $errors[] = 'resilience configuration must be an array.';
+            } else {
+                $errors = [...$errors, ...$this->validateResilience($config['resilience'])];
+            }
+        }
+
         if ($errors !== []) {
             throw new ConfigurationException($errors);
         }
@@ -117,5 +125,109 @@ class ConfigValidator
     private function isNumeric(mixed $value): bool
     {
         return is_int($value) || is_float($value);
+    }
+
+    /**
+     * @param array<string, mixed> $resilience
+     * @return array<int, string>
+     */
+    private function validateResilience(array $resilience): array
+    {
+        $errors = [];
+
+        $timeouts = $resilience['timeouts'] ?? [];
+        if (!is_array($timeouts)) {
+            $errors[] = 'resilience.timeouts must be an array.';
+        } else {
+            $defaultTimeout = $timeouts['default'] ?? null;
+            if (!$this->isNumeric($defaultTimeout) || (float) $defaultTimeout <= 0.0) {
+                $errors[] = 'resilience.timeouts.default must be a positive number.';
+            }
+
+            if (isset($timeouts['per_route'])) {
+                if (!is_array($timeouts['per_route'])) {
+                    $errors[] = 'resilience.timeouts.per_route must be an array.';
+                } else {
+                    foreach ($timeouts['per_route'] as $route => $value) {
+                        $timeout = $this->extractTimeoutValue($value);
+                        if ($timeout === null || $timeout <= 0.0) {
+                            $errors[] = sprintf('resilience.timeouts.per_route.%s must be a positive number.', (string) $route);
+                        }
+                    }
+                }
+            }
+        }
+
+        $breaker = $resilience['circuit_breaker'] ?? [];
+        if (!is_array($breaker)) {
+            $errors[] = 'resilience.circuit_breaker must be an array.';
+        } else {
+            $failureThreshold = $breaker['failure_threshold'] ?? null;
+            if (!is_int($failureThreshold) || $failureThreshold <= 0) {
+                $errors[] = 'resilience.circuit_breaker.failure_threshold must be a positive integer.';
+            }
+
+            $successThreshold = $breaker['success_threshold'] ?? null;
+            if (!is_int($successThreshold) || $successThreshold <= 0) {
+                $errors[] = 'resilience.circuit_breaker.success_threshold must be a positive integer.';
+            }
+
+            $cooldown = $breaker['cooldown_seconds'] ?? null;
+            if (!$this->isNumeric($cooldown) || (float) $cooldown < 0.0) {
+                $errors[] = 'resilience.circuit_breaker.cooldown_seconds must be zero or greater.';
+            }
+
+            if (isset($breaker['enabled']) && !is_bool($breaker['enabled'])) {
+                $errors[] = 'resilience.circuit_breaker.enabled must be a boolean value.';
+            }
+
+            if (isset($breaker['per_route'])) {
+                if (!is_array($breaker['per_route'])) {
+                    $errors[] = 'resilience.circuit_breaker.per_route must be an array.';
+                } else {
+                    foreach ($breaker['per_route'] as $route => $settings) {
+                        if (is_array($settings)) {
+                            if (isset($settings['enabled']) && !is_bool($settings['enabled'])) {
+                                $errors[] = sprintf('resilience.circuit_breaker.per_route.%s.enabled must be a boolean value.', (string) $route);
+                            }
+                            if (isset($settings['failure_threshold']) && (!is_int($settings['failure_threshold']) || $settings['failure_threshold'] <= 0)) {
+                                $errors[] = sprintf('resilience.circuit_breaker.per_route.%s.failure_threshold must be a positive integer.', (string) $route);
+                            }
+                            if (isset($settings['success_threshold']) && (!is_int($settings['success_threshold']) || $settings['success_threshold'] <= 0)) {
+                                $errors[] = sprintf('resilience.circuit_breaker.per_route.%s.success_threshold must be a positive integer.', (string) $route);
+                            }
+                            if (isset($settings['cooldown_seconds']) && (!$this->isNumeric($settings['cooldown_seconds']) || (float) $settings['cooldown_seconds'] < 0.0)) {
+                                $errors[] = sprintf('resilience.circuit_breaker.per_route.%s.cooldown_seconds must be zero or greater.', (string) $route);
+                            }
+                        } elseif (!is_int($settings) || $settings <= 0) {
+                            $errors[] = sprintf('resilience.circuit_breaker.per_route.%s must be a positive integer when specified as a scalar.', (string) $route);
+                        }
+                    }
+                }
+            }
+        }
+
+        if (isset($resilience['health'])) {
+            if (!is_array($resilience['health'])) {
+                $errors[] = 'resilience.health must be an array.';
+            } elseif (isset($resilience['health']['dependencies']) && !is_array($resilience['health']['dependencies'])) {
+                $errors[] = 'resilience.health.dependencies must be an array.';
+            }
+        }
+
+        return $errors;
+    }
+
+    private function extractTimeoutValue(mixed $value): ?float
+    {
+        if ($this->isNumeric($value)) {
+            return (float) $value;
+        }
+
+        if (is_array($value) && isset($value['timeout'])) {
+            return $this->isNumeric($value['timeout']) ? (float) $value['timeout'] : null;
+        }
+
+        return null;
     }
 }

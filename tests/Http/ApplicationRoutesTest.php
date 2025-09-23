@@ -27,6 +27,7 @@ class ApplicationRoutesTest extends TestCase {
     $app = new Application($config);
     $app->register(new AppProvider());
     $app->register(new MetricsProvider());
+    $app->register(new \Bamboo\Provider\ResilienceProvider());
     $app->singleton('redis.client.factory', function() use ($app) {
       return function(array $overrides = []) use ($app) {
         $config = array_replace($app->config('redis') ?? [], $overrides);

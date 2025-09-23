@@ -142,6 +142,36 @@ class ConfigValidatorTest extends TestCase
         }
     }
 
+    public function testResilienceTimeoutDefaultMustBePositive(): void
+    {
+        $config = $this->validConfig();
+        $config['resilience']['timeouts']['default'] = 0.0;
+
+        $validator = new ConfigValidator();
+
+        try {
+            $validator->validate($config);
+            $this->fail('Expected ConfigurationException to be thrown.');
+        } catch (ConfigurationException $exception) {
+            $this->assertSame(['resilience.timeouts.default must be a positive number.'], $exception->errors());
+        }
+    }
+
+    public function testCircuitBreakerFailureThresholdMustBePositive(): void
+    {
+        $config = $this->validConfig();
+        $config['resilience']['circuit_breaker']['failure_threshold'] = 0;
+
+        $validator = new ConfigValidator();
+
+        try {
+            $validator->validate($config);
+            $this->fail('Expected ConfigurationException to be thrown.');
+        } catch (ConfigurationException $exception) {
+            $this->assertSame(['resilience.circuit_breaker.failure_threshold must be a positive integer.'], $exception->errors());
+        }
+    }
+
     /**
      * @return array<string, mixed>
      */
@@ -184,6 +214,22 @@ class ConfigValidatorTest extends TestCase
                     ],
                 ],
                 'services' => [],
+            ],
+            'resilience' => [
+                'timeouts' => [
+                    'default' => 3.0,
+                    'per_route' => [],
+                ],
+                'circuit_breaker' => [
+                    'enabled' => true,
+                    'failure_threshold' => 5,
+                    'cooldown_seconds' => 1.0,
+                    'success_threshold' => 1,
+                    'per_route' => [],
+                ],
+                'health' => [
+                    'dependencies' => [],
+                ],
             ],
         ];
     }

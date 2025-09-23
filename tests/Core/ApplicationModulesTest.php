@@ -4,8 +4,10 @@ namespace Tests\Core;
 
 use Bamboo\Core\Application;
 use Bamboo\Core\Config;
+use Bamboo\Web\Middleware\CircuitBreakerMiddleware;
 use Bamboo\Web\Middleware\HttpMetricsCollector;
 use Bamboo\Web\Middleware\RequestId;
+use Bamboo\Web\Middleware\TimeoutMiddleware;
 use Bamboo\Web\Middleware\SignatureHeader;
 use PHPUnit\Framework\TestCase;
 use Tests\Stubs\ModuleLifecycleLog;
@@ -44,8 +46,10 @@ class ApplicationModulesTest extends TestCase
         $this->assertArrayHasKey('web', $middleware['groups']);
 
         $this->assertSame([
-            HttpMetricsCollector::class,
             RequestId::class,
+            HttpMetricsCollector::class,
+            CircuitBreakerMiddleware::class,
+            TimeoutMiddleware::class,
             TestModuleAlpha::GLOBAL_MIDDLEWARE,
             TestModuleBeta::GLOBAL_MIDDLEWARE,
         ], $middleware['global']);

@@ -99,6 +99,22 @@ class Config {
           'default' => [0.05, 0.1, 0.25, 0.5, 1.0, 2.5, 5.0],
         ],
       ],
+      'resilience' => file_exists($this->dir . '/resilience.php') ? require $this->dir . '/resilience.php' : [
+        'timeouts' => [
+          'default' => 3.0,
+          'per_route' => [],
+        ],
+        'circuit_breaker' => [
+          'enabled' => true,
+          'failure_threshold' => 5,
+          'cooldown_seconds' => 30.0,
+          'success_threshold' => 1,
+          'per_route' => [],
+        ],
+        'health' => [
+          'dependencies' => [],
+        ],
+      ],
     ];
   }
 

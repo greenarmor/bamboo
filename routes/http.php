@@ -14,6 +14,14 @@ $router->get('/metrics', RouteDefinition::forHandler(
   [Bamboo\Web\Controller\MetricsController::class, 'index']
 ));
 
+$router->get('/healthz', RouteDefinition::forHandler(
+  [Bamboo\Web\Controller\HealthController::class, 'healthz']
+));
+
+$router->get('/readyz', RouteDefinition::forHandler(
+  [Bamboo\Web\Controller\HealthController::class, 'readyz']
+));
+
 $router->get('/hello/{name}', RouteDefinition::forHandler(
   function($request, $vars){
     return new Nyholm\Psr7\Response(200, ['Content-Type'=>'text/plain'], "Hello, {$vars['name']}!\n");

@@ -1,8 +1,10 @@
 <?php
 
 use Bamboo\Swoole\ServerInstrumentation;
+use Bamboo\Web\Health\HealthState;
 
 $app = require __DIR__ . '/app.php';
+$health = $app->has(HealthState::class) ? $app->get(HealthState::class) : null;
 
 $host = $app->config('server.host');
 $port = (int)$app->config('server.port');
@@ -17,8 +19,11 @@ $server->set([
   'max_request' => $app->config('server.max_requests'),
 ]);
 
-$server->on('start', function() use ($host,$port){
+$server->on('start', function() use ($host, $port, $health){
   ServerInstrumentation::markStarted();
+  if ($health) {
+    $health->markReady();
+  }
   echo "Bamboo HTTP online at http://{$host}:{$port}\n";
 });
 
@@ -40,6 +45,16 @@ $server->on('task', function (OpenSwoole\Server $server, int $taskId, int $srcWo
 $server->on('finish', function (OpenSwoole\Server $server, int $taskId, mixed $data): void {
   // No-op finish handler keeps OpenSwoole satisfied when task workers are enabled.
 });
+
+if ($health) {
+  $server->on('workerStop', function() use ($health): void {
+    $health->markShuttingDown();
+  });
+
+  $server->on('shutdown', function() use ($health): void {
+    $health->markShuttingDown();
+  });
+}
 
 $disableStart = filter_var($_ENV['DISABLE_HTTP_SERVER_START'] ?? false, FILTER_VALIDATE_BOOLEAN);
 

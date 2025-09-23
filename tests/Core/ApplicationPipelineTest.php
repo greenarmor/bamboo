@@ -7,6 +7,7 @@ use Bamboo\Core\Config;
 use Bamboo\Core\RouteDefinition;
 use Bamboo\Provider\AppProvider;
 use Bamboo\Provider\MetricsProvider;
+use Bamboo\Provider\ResilienceProvider;
 use Bamboo\Web\Kernel;
 use Bamboo\Web\RequestContext;
 use Nyholm\Psr7\Response;
@@ -141,6 +142,7 @@ class ApplicationPipelineTest extends TestCase {
         $app = new Application($config);
         $app->register(new AppProvider());
         $app->register(new MetricsProvider());
+        $app->register(new ResilienceProvider());
         return $app;
     }
 

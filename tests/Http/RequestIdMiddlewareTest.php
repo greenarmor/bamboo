@@ -24,6 +24,7 @@ class RequestIdMiddlewareTest extends TestCase {
     $app = new Application($config);
     $app->register(new AppProvider());
     $app->register(new MetricsProvider());
+    $app->register(new \Bamboo\Provider\ResilienceProvider());
     return $app;
   }
 

@@ -17,8 +17,10 @@ declare(strict_types=1);
  */
 return [
     'global' => [
-        Bamboo\Web\Middleware\HttpMetricsCollector::class,
         Bamboo\Web\Middleware\RequestId::class,
+        Bamboo\Web\Middleware\HttpMetricsCollector::class,
+        Bamboo\Web\Middleware\CircuitBreakerMiddleware::class,
+        Bamboo\Web\Middleware\TimeoutMiddleware::class,
     ],
     'groups' => [
         'web' => [

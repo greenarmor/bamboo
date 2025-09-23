@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Bamboo\Provider;
 
 use Bamboo\Core\Application;
+use Bamboo\Observability\Metrics\CircuitBreakerMetrics;
 use Bamboo\Observability\Metrics\HttpMetrics;
 use Bamboo\Observability\Metrics\Storage\SwooleTableAdapter;
 use Prometheus\CollectorRegistry;
@@ -39,6 +40,14 @@ class MetricsProvider
         });
 
         $app->bind('metrics.http', fn(Application $app): HttpMetrics => $app->get(HttpMetrics::class));
+
+        $app->singleton(CircuitBreakerMetrics::class, function (Application $app) {
+            $config = $app->config('metrics') ?? [];
+
+            return new CircuitBreakerMetrics($app->get(CollectorRegistry::class), $config);
+        });
+
+        $app->bind('metrics.circuit_breaker', fn(Application $app): CircuitBreakerMetrics => $app->get(CircuitBreakerMetrics::class));
     }
 
     /**
