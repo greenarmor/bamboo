@@ -18,6 +18,14 @@
     "issues": "https://github.com/greenarmor/bamboo/issues",
     "source": "https://github.com/greenarmor/bamboo"
   },
+  "authors": [
+    {
+      "name": "Emmanuel Secretaria",
+      "email": "greenarmor@users.noreply.github.com",
+      "homepage": "https://github.com/greenarmor",
+      "role": "Maintainer"
+    }
+  ],
   "require": {
     "php": "^8.4",
     "ext-openswoole": "*",
