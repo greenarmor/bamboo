@@ -40,7 +40,7 @@ class ApplicationRoutesTest extends TestCase {
     return $app;
   }
 
-  public function testHomeRouteRespondsWithFrameworkMetadata(): void {
+  public function testHomeRouteBootstrapsLandingExperienceFromApi(): void {
     $app = $this->createApp();
     $response = $app->handle(new ServerRequest('GET', '/'));
 
@@ -48,14 +48,45 @@ class ApplicationRoutesTest extends TestCase {
     $this->assertSame('text/html; charset=utf-8', $response->getHeaderLine('Content-Type'));
 
     $body = (string) $response->getBody();
-    $this->assertStringContainsString('Bamboo makes high-performance PHP approachable.', $body);
-    $this->assertStringContainsString('Powered by OpenSwoole', $body);
-    $this->assertStringContainsString('Environment ready', $body);
-    $this->assertStringContainsString(PHP_VERSION, $body);
-    $this->assertStringContainsString('php bin/bamboo http.serve', $body);
+    $this->assertStringContainsString('id="landing-root"', $body);
+    $this->assertStringContainsString("fetch('/api/landing'", $body);
+
+    $loadingMessage = sprintf('Loading %s experience…', $app->config('app.name', 'Bamboo'));
+    $this->assertStringContainsString($loadingMessage, html_entity_decode($body, ENT_QUOTES));
+    $this->assertStringContainsString('Enable JavaScript to view the Bamboo landing experience.', $body);
+  }
+
+  public function testLandingPageApiProvidesDynamicMarkupPayload(): void {
+    $app = $this->createApp();
+    $response = $app->handle(new ServerRequest('GET', '/api/landing'));
+
+    $this->assertSame(200, $response->getStatusCode());
+    $this->assertSame('application/json', $response->getHeaderLine('Content-Type'));
+
+    $payload = json_decode((string) $response->getBody(), true, flags: JSON_THROW_ON_ERROR);
+
+    $this->assertIsArray($payload);
+    $this->assertArrayHasKey('html', $payload);
+    $this->assertArrayHasKey('meta', $payload);
+
+    $html = $payload['html'];
+    $this->assertIsString($html);
+    $this->assertStringContainsString('Bamboo makes high-performance PHP approachable.', $html);
+    $this->assertStringContainsString('Powered by OpenSwoole', $html);
+    $this->assertStringContainsString('Environment ready', $html);
+    $this->assertStringContainsString('php bin/bamboo http.serve', $html);
 
     $expectedSwoole = $this->expectedSwooleVersion();
-    $this->assertStringContainsString($expectedSwoole, $body);
+    $this->assertStringContainsString($expectedSwoole, $html);
+
+    $meta = $payload['meta'];
+    $this->assertIsArray($meta);
+    $this->assertSame(
+      sprintf('%s | Modern PHP Microframework', $app->config('app.name', 'Bamboo')),
+      $meta['title'] ?? null
+    );
+    $this->assertSame('Bamboo makes high-performance PHP approachable.', $meta['description'] ?? null);
+    $this->assertArrayHasKey('generated_at', $meta);
   }
 
   public function testHelloRouteGreetsName(): void {

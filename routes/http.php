@@ -12,6 +12,10 @@ $router->get('/', RouteDefinition::forHandler(
   middlewareGroups: ['web'],
 ));
 
+$router->get('/api/landing', RouteDefinition::forHandler(
+  [Bamboo\Web\Controller\LandingContentController::class, 'show']
+));
+
 $router->get('/metrics', RouteDefinition::forHandler(
   [Bamboo\Web\Controller\MetricsController::class, 'index']
 ));

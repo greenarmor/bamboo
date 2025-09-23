@@ -1,28 +1,32 @@
 <?php
 namespace Bamboo\Web\Controller;
+
 use Nyholm\Psr7\Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Bamboo\Core\Application;
-
+use Bamboo\Web\View\LandingPageContent;
 class Home {
   public function __construct(protected Application $app) {}
 
   public function index(Request $request): Response {
-    $framework = $this->escape((string)$this->app->config('app.name', 'Bamboo'));
-    $environment = $this->escape((string)$this->app->config('app.env', 'local'));
-    $phpVersion = $this->escape(PHP_VERSION);
-    $swooleVersion = $this->escape($this->resolveSwooleVersion());
-    $currentTime = $this->escape(date('F j, Y g:i A T'));
-    $docsUrl = $this->escape('https://github.com/greenarmor/bamboo');
-    $startersUrl = $this->escape('https://github.com/greenarmor/bamboo/tree/main/docs/starters');
+    $contentBuilder = new LandingPageContent($this->app);
+    $payload = $contentBuilder->payload();
+
+    $title = $this->escape($payload['meta']['title'] ?? 'Bamboo | Modern PHP Microframework');
+    $description = $this->escape($payload['meta']['description'] ?? 'Bamboo makes high-performance PHP approachable.');
+
+    $loadingMessage = $this->escape(sprintf('Loading %s experience…', $this->app->config('app.name', 'Bamboo')));
+    $errorHtml = '<div class="error-state" role="alert">Unable to load the Bamboo welcome experience. Refresh to try again.</div>';
+    $encodedErrorHtml = json_encode($errorHtml, JSON_THROW_ON_ERROR);
 
     $html = <<<HTML
 <!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="utf-8">
-    <title>{$framework} | Modern PHP Microframework</title>
+    <title>{$title}</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="{$description}">
     <style>
       :root {
         color-scheme: dark;
@@ -250,20 +254,58 @@ class Home {
         white-space: pre-wrap;
       }
 
-      footer {
+      .footer {
         margin-top: auto;
         text-align: center;
         font-size: 0.85rem;
         color: #64748b;
       }
 
-      footer a {
+      .footer a {
         color: #38bdf8;
         text-decoration: none;
       }
 
-      footer a:hover {
+      .footer a:hover {
         text-decoration: underline;
+      }
+
+      .loading-state {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        align-items: center;
+        justify-content: center;
+        min-height: 240px;
+        color: #94a3b8;
+      }
+
+      .loading-state .spinner {
+        width: 44px;
+        height: 44px;
+        border-radius: 999px;
+        border: 3px solid rgba(148, 163, 184, 0.2);
+        border-top-color: #38bdf8;
+        animation: spin 1s linear infinite;
+      }
+
+      .loading-state .label {
+        font-size: 0.95rem;
+        letter-spacing: 0.05em;
+      }
+
+      .error-state {
+        text-align: center;
+        background: rgba(153, 27, 27, 0.12);
+        border: 1px solid rgba(248, 113, 113, 0.35);
+        color: #fecaca;
+        border-radius: 18px;
+        padding: 32px;
+      }
+
+      @keyframes spin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
       }
 
       @media (max-width: 640px) {
@@ -282,96 +324,56 @@ class Home {
     </style>
   </head>
   <body>
-    <div class="page">
-      <section class="hero">
-        <div class="hero-badges">
-          <span class="pill"><strong>async</strong><span class="label">Powered by OpenSwoole</span></span>
-          <span class="pill"><strong>{$environment}</strong><span class="label">Environment ready</span></span>
-        </div>
-        <h1>{$framework} makes high-performance PHP approachable.</h1>
-        <p>Ship modern services with an event-driven HTTP kernel, first-class observability, and a developer experience inspired by Next.js — all without leaving PHP.</p>
-        <div class="hero-actions">
-          <a class="cta primary" href="{$docsUrl}" target="_blank" rel="noreferrer">Read the documentation</a>
-          <a class="cta secondary" href="{$startersUrl}" target="_blank" rel="noreferrer">Explore starters</a>
-        </div>
-      </section>
-
-      <section class="grid" aria-label="Framework capabilities">
-        <article class="card">
-          <span class="icon">⚡</span>
-          <h3>Reactive HTTP core</h3>
-          <p>Serve concurrent requests over OpenSwoole with routing, middleware pipelines, and graceful terminators that keep deployments predictable.</p>
-        </article>
-        <article class="card">
-          <span class="icon">🛠️</span>
-          <h3>Composable modules</h3>
-          <p>Bring queues, metrics, and WebSockets online with lightweight modules that register services, middleware, and console commands automatically.</p>
-        </article>
-        <article class="card">
-          <span class="icon">📈</span>
-          <h3>Production observability</h3>
-          <p>Expose Prometheus metrics, structured logs, and health probes out of the box so every service is ready for real workloads.</p>
-        </article>
-        <article class="card">
-          <span class="icon">⚙️</span>
-          <h3>Developer velocity</h3>
-          <p>Hot reload with <code>dev.watch</code>, test routes quickly, and lean on typed configuration to keep feedback loops fast.</p>
-        </article>
-      </section>
-
-      <section class="stats" aria-label="Runtime details">
-        <dl class="stat">
-          <dt>PHP</dt>
-          <dd>{$phpVersion}</dd>
-        </dl>
-        <dl class="stat">
-          <dt>OpenSwoole</dt>
-          <dd>{$swooleVersion}</dd>
-        </dl>
-        <dl class="stat">
-          <dt>Environment</dt>
-          <dd>{$environment}</dd>
-        </dl>
-        <dl class="stat">
-          <dt>Generated</dt>
-          <dd>{$currentTime}</dd>
-        </dl>
-      </section>
-
-      <section class="snippet" aria-label="Quick start commands">
-        <pre>
-$ composer create-project greenarmor/bamboo example-app
-$ cd example-app
-$ php bin/bamboo http.serve
-        </pre>
-      </section>
-
-      <footer>
-        Crafted with ❤️ for asynchronous PHP. Contribute on <a href="{$docsUrl}" target="_blank" rel="noreferrer">GitHub</a>.
-      </footer>
+    <div id="landing-root" class="page">
+      <div class="loading-state" role="status" aria-live="polite">
+        <span class="spinner" aria-hidden="true"></span>
+        <span class="label">{$loadingMessage}</span>
+     
     </div>
+    <noscript>
+      <div class="page">
+        <div class="error-state" role="alert">Enable JavaScript to view the Bamboo landing experience.</div>
+      </div>
+    </noscript>
+    <script type="module">
+      const root = document.getElementById('landing-root');
+
+      async function renderLanding() {
+        try {
+          const response = await fetch('/api/landing', { headers: { 'Accept': 'application/json' } });
+          if (!response.ok) {
+            throw new Error('Failed with status ' + response.status);
+          }
+
+          const payload = await response.json();
+
+          if (payload && payload.html) {
+            root.innerHTML = payload.html;
+          }
+
+          if (payload && payload.meta && payload.meta.title) {
+            document.title = payload.meta.title;
+          }
+
+          if (payload && payload.meta && payload.meta.description) {
+            const descriptionTag = document.querySelector('meta[name="description"]');
+            if (descriptionTag) {
+              descriptionTag.setAttribute('content', payload.meta.description);
+            }
+          }
+        } catch (error) {
+          root.innerHTML = {$encodedErrorHtml};
+          console.error('Failed to load landing page payload', error);
+        }
+      }
+
+      renderLanding();
+    </script>
   </body>
 </html>
 HTML;
 
     return new Response(200, ['Content-Type' => 'text/html; charset=utf-8'], $html);
-  }
-
-  private function resolveSwooleVersion(): string {
-    if (defined('SWOOLE_VERSION')) {
-      return SWOOLE_VERSION;
-    }
-
-    foreach (['openswoole', 'swoole'] as $extension) {
-      if (extension_loaded($extension)) {
-        $version = phpversion($extension);
-        if (is_string($version) && $version !== '') {
-          return $version;
-        }
-      }
-    }
-
-    return 'not installed';
   }
 
   private function escape(string $value): string {
