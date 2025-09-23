@@ -42,9 +42,13 @@ php bin/bamboo http.serve
 ```
 Open: http://127.0.0.1:9501
 
-## Installation on PHP 8.4
+## Installation guides
 
-Need the full PHP 8.4 + OpenSwoole toolchain? Follow the [step-by-step installation and configuration guide](docs/Install-Bamboo-PHP84.md) for detailed package lists, environment setup, and service configuration tips.
+Need the full PHP + OpenSwoole toolchain? Pick the guide that matches your runtime for detailed package lists, environment setup, and service configuration tips:
+
+- [PHP 8.2 installation & configuration](docs/Install-Bamboo-PHP82.md)
+- [PHP 8.3 installation & configuration](docs/Install-Bamboo-PHP83.md)
+- [PHP 8.4 installation & configuration](docs/Install-Bamboo-PHP84.md)
 
 ## Try the client
 ```bash
