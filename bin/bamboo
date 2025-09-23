@@ -1,6 +1,153 @@
-#!/usr/bin/env php8.4
+#!/usr/bin/env php
 <?php
+
+const BAMBOO_MIN_PHP_VERSION_ID = 80200;
+const BAMBOO_RUNTIME_REDIRECT_ENV = 'BAMBOO_PHP_REDIRECT';
+
+$redirectedFrom = getenv(BAMBOO_RUNTIME_REDIRECT_ENV);
+if ($redirectedFrom !== false) {
+    putenv(BAMBOO_RUNTIME_REDIRECT_ENV);
+}
+
+if (PHP_SAPI !== 'cli') {
+    fwrite(
+        STDERR,
+        sprintf(
+            "Bamboo's console launcher must run under the CLI SAPI. Current SAPI: %s\n",
+            PHP_SAPI
+        )
+    );
+    exit(1);
+}
+
+if (PHP_VERSION_ID < BAMBOO_MIN_PHP_VERSION_ID) {
+    $argv = $_SERVER['argv'] ?? [];
+    $script = $argv[0] ?? __FILE__;
+    $arguments = array_slice($argv, 1);
+
+    if ($redirectedFrom === false) {
+        foreach (['php8.4', 'php8.3', 'php8.2', 'php'] as $candidateName) {
+            $candidatePath = locatePhpBinary($candidateName);
+            if ($candidatePath === null || binariesEqual($candidatePath, PHP_BINARY)) {
+                continue;
+            }
+
+            $candidateVersionId = detectPhpVersionId($candidatePath);
+            if ($candidateVersionId !== null && $candidateVersionId < BAMBOO_MIN_PHP_VERSION_ID) {
+                continue;
+            }
+
+            putenv(BAMBOO_RUNTIME_REDIRECT_ENV . '=' . $candidatePath);
+
+            $command = escapeshellarg($candidatePath) . ' ' . escapeshellarg($script);
+            foreach ($arguments as $argument) {
+                $command .= ' ' . escapeshellarg($argument);
+            }
+
+            passthru($command, $status);
+            exit($status ?? 1);
+        }
+    }
+
+    fwrite(
+        STDERR,
+        sprintf(
+            "Bamboo requires PHP >= 8.2.0, but %s (%s) was detected.%s\n",
+            PHP_VERSION,
+            PHP_BINARY,
+            $redirectedFrom !== false ? sprintf(' (attempted %s)', $redirectedFrom) : ''
+        )
+    );
+    fwrite(
+        STDERR,
+        "Tried locating php8.4, php8.3, php8.2 or php binaries on your PATH that satisfy the requirement.\n"
+    );
+
+    exit(1);
+}
+
 $bootstrap = __DIR__ . '/../bootstrap/app.php';
 $app = require $bootstrap;
 $kernel = new Bamboo\Console\Kernel($app);
 exit($kernel->run($argv));
+
+function locatePhpBinary(string $binary): ?string
+{
+    if ($binary === '') {
+        return null;
+    }
+
+    $path = getenv('PATH');
+    if (!is_string($path) || $path === '') {
+        return null;
+    }
+
+    foreach (explode(PATH_SEPARATOR, $path) as $directory) {
+        if ($directory === '') {
+            continue;
+        }
+
+        $candidate = $directory . DIRECTORY_SEPARATOR . $binary;
+        if (is_file($candidate) && is_executable($candidate)) {
+            return $candidate;
+        }
+
+        if (DIRECTORY_SEPARATOR === '\\') {
+            $candidateExe = $candidate . '.exe';
+            if (is_file($candidateExe) && is_executable($candidateExe)) {
+                return $candidateExe;
+            }
+        }
+    }
+
+    return null;
+}
+
+function binariesEqual(string $first, string $second): bool
+{
+    $firstReal = realpath($first) ?: $first;
+    $secondReal = realpath($second) ?: $second;
+
+    return $firstReal === $secondReal;
+}
+
+function detectPhpVersionId(string $binary): ?int
+{
+    $command = escapeshellarg($binary) . ' -r "echo PHP_VERSION_ID;"';
+
+    if (function_exists('proc_open')) {
+        $descriptors = [
+            1 => ['pipe', 'w'],
+            2 => ['pipe', 'w'],
+        ];
+
+        $process = @proc_open($command, $descriptors, $pipes);
+        if (is_resource($process)) {
+            $output = stream_get_contents($pipes[1]);
+
+            foreach ($pipes as $pipe) {
+                fclose($pipe);
+            }
+
+            $status = proc_close($process);
+            if ($status === 0 && is_string($output)) {
+                $output = trim($output);
+                if ($output !== '' && ctype_digit($output)) {
+                    return (int) $output;
+                }
+            }
+        }
+    }
+
+    if (function_exists('shell_exec')) {
+        $output = @shell_exec($command);
+        if (is_string($output)) {
+            $output = trim($output);
+            if ($output !== '' && ctype_digit($output)) {
+                return (int) $output;
+            }
+        }
+    }
+
+    return null;
+}
