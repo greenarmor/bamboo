@@ -10,6 +10,7 @@ use Psr\Http\Client\ClientInterface as Psr18;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
 use Tests\Stubs\OpenSwooleHook;
+use Tests\Support\OpenSwooleCompat;
 
 class RecordingPsr18Client implements Psr18 {
   /** @var list<ResponseInterface|\Throwable> */
@@ -104,7 +105,9 @@ class Psr18ClientTest extends TestCase {
   }
 
   public function testSendConcurrentWithinOpenSwooleCoroutine(): void {
-    \OpenSwoole\Coroutine::$created = [];
+    if (OpenSwooleCompat::coroutineUsesStub()) {
+      \OpenSwoole\Coroutine::$created = [];
+    }
 
     $psr17 = new Psr17Factory();
     $responses = [
@@ -129,11 +132,17 @@ class Psr18ClientTest extends TestCase {
     $this->assertCount(2, $results);
     $this->assertSame('one', (string) $results[0]->getBody());
     $this->assertSame('two', (string) $results[1]->getBody());
-    $this->assertCount(2, \OpenSwoole\Coroutine::$created);
+    if (OpenSwooleCompat::coroutineUsesStub()) {
+      $this->assertCount(2, \OpenSwoole\Coroutine::$created);
+    }
     $this->assertSame(-1, \OpenSwoole\Coroutine::getCid());
   }
 
   public function testSleepMicrosUsesCoroutineUsleepWhenAvailable(): void {
+    if (!OpenSwooleCompat::coroutineUsesStub()) {
+      $this->markTestSkipped('Coroutine stubs required to observe micro sleep usage.');
+    }
+
     OpenSwooleHook::reset();
 
     $psr17 = new Psr17Factory();

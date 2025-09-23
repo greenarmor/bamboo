@@ -7,9 +7,12 @@ use Bamboo\Core\Config;
 use Bamboo\Provider\AppProvider;
 use Bamboo\Provider\MetricsProvider;
 use Bamboo\Provider\ResilienceProvider;
+use Bamboo\Swoole\ServerInstrumentation;
 use Bamboo\Web\Health\HealthState;
 use Nyholm\Psr7\ServerRequest;
 use PHPUnit\Framework\TestCase;
+use Tests\Support\OpenSwooleCompat;
+use Tests\Support\PortAllocator;
 
 class HealthChecksTest extends TestCase {
   protected function setUp(): void {
@@ -59,6 +62,8 @@ class HealthChecksTest extends TestCase {
   public function testGracefulShutdownMarksWorkerUnreadyBeforeExit(): void {
     HealthState::resetGlobal();
     $_ENV['DISABLE_HTTP_SERVER_START'] = 'true';
+    $_ENV['HTTP_PORT'] = (string)PortAllocator::allocate();
+    ServerInstrumentation::reset();
 
     require dirname(__DIR__, 3) . '/bootstrap/server.php';
 
@@ -66,14 +71,25 @@ class HealthChecksTest extends TestCase {
     $this->assertInstanceOf(HealthState::class, $state);
     $this->assertTrue($state->isReady());
 
-    $server = \OpenSwoole\HTTP\Server::$lastInstance;
+    $server = ServerInstrumentation::server();
     $this->assertNotNull($server);
+
+    if (!OpenSwooleCompat::httpServerUsesStub()) {
+      $this->markTestSkipped('OpenSwoole test doubles are required to dispatch shutdown events.');
+    }
+
     $server->trigger('shutdown');
 
     $this->assertFalse($state->isReady());
 
     unset($_ENV['DISABLE_HTTP_SERVER_START']);
-    \OpenSwoole\HTTP\Server::$lastInstance = null;
+    unset($_ENV['HTTP_PORT']);
+
+    if (OpenSwooleCompat::httpServerUsesStub()) {
+      \OpenSwoole\HTTP\Server::$lastInstance = null;
+    }
+
+    ServerInstrumentation::reset();
   }
 
   private function createApp(): Application {
