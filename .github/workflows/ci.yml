@@ -13,9 +13,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # TODO: Re-enable the PHP 8.4 lane once shivammathur/setup-php and
-        # OpenSwoole publish compatible builds.
-        php-version: ['8.2', '8.3']
+        php-version: ['8.4']
 
     steps:
       - name: Checkout
