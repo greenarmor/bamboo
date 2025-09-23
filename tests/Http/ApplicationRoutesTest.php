@@ -45,20 +45,17 @@ class ApplicationRoutesTest extends TestCase {
     $response = $app->handle(new ServerRequest('GET', '/'));
 
     $this->assertSame(200, $response->getStatusCode());
-    $this->assertSame('application/json', $response->getHeaderLine('Content-Type'));
-    $data = json_decode((string) $response->getBody(), true);
-    $this->assertIsArray($data);
-    $this->assertSame('Bamboo', $data['framework']);
-    $this->assertArrayHasKey('php', $data);
-    $this->assertArrayHasKey('swoole', $data);
-    $this->assertIsString($data['swoole']);
-    if (defined('SWOOLE_VERSION') || extension_loaded('openswoole') || extension_loaded('swoole')) {
-      $this->assertNotSame('not installed', $data['swoole']);
-      $this->assertNotSame('', $data['swoole']);
-    } else {
-      $this->assertSame('not installed', $data['swoole']);
-    }
-    $this->assertArrayHasKey('time', $data);
+    $this->assertSame('text/html; charset=utf-8', $response->getHeaderLine('Content-Type'));
+
+    $body = (string) $response->getBody();
+    $this->assertStringContainsString('Bamboo makes high-performance PHP approachable.', $body);
+    $this->assertStringContainsString('Powered by OpenSwoole', $body);
+    $this->assertStringContainsString('Environment ready', $body);
+    $this->assertStringContainsString(PHP_VERSION, $body);
+    $this->assertStringContainsString('php bin/bamboo http.serve', $body);
+
+    $expectedSwoole = $this->expectedSwooleVersion();
+    $this->assertStringContainsString($expectedSwoole, $body);
   }
 
   public function testHelloRouteGreetsName(): void {
@@ -150,5 +147,22 @@ class ApplicationRoutesTest extends TestCase {
     $this->assertNotSame('', $body);
     $this->assertStringContainsString('# HELP bamboo_http_requests_in_flight', $body);
     $this->assertStringContainsString('bamboo_http_requests_in_flight', $body);
+  }
+
+  private function expectedSwooleVersion(): string {
+    if (defined('SWOOLE_VERSION')) {
+      return SWOOLE_VERSION;
+    }
+
+    foreach (['openswoole', 'swoole'] as $extension) {
+      if (extension_loaded($extension)) {
+        $version = phpversion($extension);
+        if (is_string($version) && $version !== '') {
+          return $version;
+        }
+      }
+    }
+
+    return 'not installed';
   }
 }
