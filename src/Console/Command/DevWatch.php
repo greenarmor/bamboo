@@ -281,13 +281,50 @@ HELP;
     protected function createProcessFactory(string $command): callable
     {
         $cwd = $this->basePath();
+        $env = $this->createProcessEnvironment();
 
-        return function () use ($command, $cwd): Process {
-            $process = Process::fromShellCommandline($command, $cwd);
+        return function () use ($command, $cwd, $env): Process {
+            $process = Process::fromShellCommandline($command, $cwd, $env ?: null);
             $process->setTimeout(null);
             $process->setIdleTimeout(null);
             return $process;
         };
+    }
+
+    /**
+     * @return array<string, string|false>
+     */
+    protected function createProcessEnvironment(): array
+    {
+        $env = [];
+
+        if ($this->shouldPreserveXdebug()) {
+            return $env;
+        }
+
+        $xdebugConfigured = getenv('XDEBUG_MODE') !== false;
+        if ($xdebugConfigured || extension_loaded('xdebug')) {
+            $env['XDEBUG_MODE'] = 'off';
+        }
+
+        if (getenv('XDEBUG_CONFIG') !== false) {
+            $env['XDEBUG_CONFIG'] = false;
+        }
+
+        return $env;
+    }
+
+    private function shouldPreserveXdebug(): bool
+    {
+        $value = $_ENV['BAMBOO_DEV_WATCH_KEEP_XDEBUG'] ?? getenv('BAMBOO_DEV_WATCH_KEEP_XDEBUG');
+
+        if ($value === false || $value === null || $value === '') {
+            return false;
+        }
+
+        $bool = filter_var($value, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+
+        return $bool === true;
     }
 
     protected function createWatcher(array $paths, LoggerInterface $logger): FileWatcher

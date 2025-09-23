@@ -33,7 +33,8 @@ class DevWatchTest extends TestCase
         $factory = static function () use ($fixture): Process {
             return Process::fromShellCommandline(
                 sprintf('%s %s', escapeshellarg(PHP_BINARY), escapeshellarg($fixture)),
-                getcwd()
+                getcwd(),
+                ['XDEBUG_MODE' => 'off']
             );
         };
 
@@ -105,6 +106,13 @@ class DevWatchTest extends TestCase
 
         $command = new TestableDevWatch($app, $logger, $watcher, $factory);
 
+        $previousMode = getenv('XDEBUG_MODE');
+        $previousConfig = getenv('XDEBUG_CONFIG');
+        putenv('XDEBUG_MODE=coverage');
+        $_ENV['XDEBUG_MODE'] = 'coverage';
+        putenv('XDEBUG_CONFIG=client_host=127.0.0.1');
+        $_ENV['XDEBUG_CONFIG'] = 'client_host=127.0.0.1';
+
         try {
             $exitCode = $command->handle([
                 '--watch=' . $watchPath,
@@ -113,6 +121,20 @@ class DevWatchTest extends TestCase
             ]);
         } finally {
             $this->cleanupDirectory($watchPath);
+            if ($previousMode === false) {
+                putenv('XDEBUG_MODE');
+                unset($_ENV['XDEBUG_MODE']);
+            } else {
+                putenv('XDEBUG_MODE=' . $previousMode);
+                $_ENV['XDEBUG_MODE'] = $previousMode;
+            }
+            if ($previousConfig === false) {
+                putenv('XDEBUG_CONFIG');
+                unset($_ENV['XDEBUG_CONFIG']);
+            } else {
+                putenv('XDEBUG_CONFIG=' . $previousConfig);
+                $_ENV['XDEBUG_CONFIG'] = $previousConfig;
+            }
         }
 
         self::assertSame(0, $exitCode);
@@ -125,6 +147,12 @@ class DevWatchTest extends TestCase
         self::assertSame(['php -v'], $command->calls['createProcessFactory'] ?? []);
         self::assertSame([0.25], $command->calls['createSupervisor'] ?? []);
         self::assertArrayHasKey('registerSignalHandlers', $command->calls);
+
+        self::assertNotEmpty($command->processEnvironment);
+        $env = $command->processEnvironment[0];
+        self::assertSame('off', $env['XDEBUG_MODE'] ?? null);
+        self::assertArrayHasKey('XDEBUG_CONFIG', $env);
+        self::assertFalse($env['XDEBUG_CONFIG']);
 
         self::assertNotEmpty($logger->records);
         $record = $logger->records[0];
@@ -208,6 +236,7 @@ class TestableDevWatch extends DevWatch
 {
     public array $calls = [];
     public ?SupervisorDouble $createdSupervisor = null;
+    public array $processEnvironment = [];
 
     public function __construct(
         RouterTestApplication $app,
@@ -240,7 +269,16 @@ class TestableDevWatch extends DevWatch
     protected function createProcessFactory(string $command): callable
     {
         $this->calls['createProcessFactory'][] = $command;
+        $this->processEnvironment[] = $this->createProcessEnvironment();
         return $this->factory;
+    }
+
+    protected function createProcessEnvironment(): array
+    {
+        $env = parent::createProcessEnvironment();
+        $this->calls['createProcessEnvironment'][] = $env;
+
+        return $env;
     }
 
     protected function registerSignalHandlers(DevWatchSupervisor $supervisor, LoggerInterface $logger): void
