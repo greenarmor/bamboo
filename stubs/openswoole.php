@@ -86,3 +86,29 @@ if (!class_exists(Util::class)) {
         }
     }
 }
+
+namespace OpenSwoole\WebSocket;
+
+if (!class_exists(Server::class)) {
+    class Server extends \OpenSwoole\Server
+    {
+        public function __construct(string $host, int $port)
+        {
+        }
+
+        public function on(string $event, callable $handler): bool
+        {
+            return true;
+        }
+
+        public function push(int $fd, string $data, int $opcode = 1, bool $finish = true): bool
+        {
+            return true;
+        }
+
+        public function start(): bool
+        {
+            return true;
+        }
+    }
+}

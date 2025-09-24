@@ -11,11 +11,6 @@ parameters:
 			path: routes/http.php
 
 		-
-			message: "#^Method Bamboo\\\\Console\\\\Command\\\\AppKeyMake\\:\\:handle\\(\\) has parameter \\$args with no value type specified in iterable type array\\.$#"
-			count: 1
-			path: src/Console/Command/AppKeyMake.php
-
-		-
 			message: "#^Parameter \\#1 \\$string of function rtrim expects string, string\\|false given\\.$#"
 			count: 1
 			path: src/Console/Command/AppKeyMake.php
@@ -36,27 +31,7 @@ parameters:
 			path: src/Console/Command/CachePurge.php
 
 		-
-			message: "#^Method Bamboo\\\\Console\\\\Command\\\\CachePurge\\:\\:handle\\(\\) has parameter \\$args with no value type specified in iterable type array\\.$#"
-			count: 1
-			path: src/Console/Command/CachePurge.php
-
-		-
-			message: "#^Method Bamboo\\\\Console\\\\Command\\\\ClientCall\\:\\:handle\\(\\) has parameter \\$args with no value type specified in iterable type array\\.$#"
-			count: 1
-			path: src/Console/Command/ClientCall.php
-
-		-
-			message: "#^Method Bamboo\\\\Console\\\\Command\\\\Command\\:\\:handle\\(\\) has parameter \\$args with no value type specified in iterable type array\\.$#"
-			count: 1
-			path: src/Console/Command/Command.php
-
-		-
 			message: "#^Method Bamboo\\\\Console\\\\Command\\\\DevWatch\\:\\:createWatcher\\(\\) has parameter \\$paths with no value type specified in iterable type array\\.$#"
-			count: 1
-			path: src/Console/Command/DevWatch.php
-
-		-
-			message: "#^Method Bamboo\\\\Console\\\\Command\\\\DevWatch\\:\\:handle\\(\\) has parameter \\$args with no value type specified in iterable type array\\.$#"
 			count: 1
 			path: src/Console/Command/DevWatch.php
 
@@ -121,35 +96,10 @@ parameters:
 			path: src/Console/Command/DevWatch/InotifyFileWatcher.php
 
 		-
-			message: "#^Method Bamboo\\\\Console\\\\Command\\\\HttpServe\\:\\:handle\\(\\) has parameter \\$args with no value type specified in iterable type array\\.$#"
-			count: 1
-			path: src/Console/Command/HttpServe.php
-
-		-
-			message: "#^Method Bamboo\\\\Console\\\\Command\\\\PkgInfo\\:\\:handle\\(\\) has parameter \\$args with no value type specified in iterable type array\\.$#"
-			count: 1
-			path: src/Console/Command/PkgInfo.php
-
-		-
 			message: "#^Parameter \\#1 \\$json of function json_decode expects string, string\\|false given\\.$#"
 			count: 1
 			path: src/Console/Command/PkgInfo.php
 
-
-		-
-			message: "#^Method Bamboo\\\\Console\\\\Command\\\\RoutesCache\\:\\:handle\\(\\) has parameter \\$args with no value type specified in iterable type array\\.$#"
-			count: 1
-			path: src/Console/Command/RoutesCache.php
-
-		-
-			message: "#^Method Bamboo\\\\Console\\\\Command\\\\RoutesShow\\:\\:handle\\(\\) has parameter \\$args with no value type specified in iterable type array\\.$#"
-			count: 1
-			path: src/Console/Command/RoutesShow.php
-
-		-
-			message: "#^Method Bamboo\\\\Console\\\\Command\\\\ScheduleRun\\:\\:handle\\(\\) has parameter \\$args with no value type specified in iterable type array\\.$#"
-			count: 1
-			path: src/Console/Command/ScheduleRun.php
 
 		-
 			message: "#^Call to an undefined method object\\:\\:description\\(\\)\\.$#"
