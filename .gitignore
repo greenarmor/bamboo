@@ -8,3 +8,5 @@
 /.phpunit.result.cache
 .php-cs-fixer.cache
 /scripts/
+.release-please-config.json
+.release-please-manifest.json
