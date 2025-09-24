@@ -139,14 +139,20 @@ when OpenSwoole coroutine wait groups are unavailable.
 | `jwt.ttl` | int | `3600` | `AUTH_JWT_TTL` |
 | `jwt.issuer` | string | `Bamboo` | `AUTH_JWT_ISSUER` |
 | `jwt.audience` | string | `BambooUsers` | `AUTH_JWT_AUDIENCE` |
-| `jwt.storage.driver` | string | `json` | — |
-| `jwt.storage.path` | string | `var/auth/users.json` | `AUTH_JWT_USER_STORE` |
+| `jwt.storage.driver` | string | `json` | `AUTH_JWT_STORAGE_DRIVER` |
+| `jwt.storage.path` | string | `var/auth/users.json` (JSON driver) | `AUTH_JWT_USER_STORE` |
 | `jwt.registration.enabled` | bool | `true` | `AUTH_JWT_ALLOW_REGISTRATION` |
 | `jwt.registration.default_roles` | array<string> | `[]` | — |
 
 When deploying authentication in production, ensure `AUTH_JWT_SECRET` is set
 before turning off `app.debug`. The `auth.jwt.setup` CLI command generates a
-secret, publishes this configuration file, and seeds a starter user store.
+secret, publishes this configuration file, and seeds a starter JSON user store
+while leaving alternate drivers untouched so you can run migrations separately.【F:src/Console/Command/AuthJwtSetup.php†L52-L233】
+
+Driver-specific environment variables populate the nested `jwt.storage.drivers`
+configuration. MySQL and PostgreSQL entries include DSNs, credentials, table
+names, and sample schema definitions; Firebase and generic NoSQL entries
+surface credential paths, collection names, and document shapes.【F:etc/auth.php†L20-L181】
 
 ## Validation hooks
 
@@ -240,16 +246,22 @@ must remain in lock-step with that guardrail and its PHPUnit coverage.【F:boots
 | `jwt.ttl` | positive integer | `3600` | `AUTH_JWT_TTL` |
 | `jwt.issuer` | string | `"Bamboo"` | `AUTH_JWT_ISSUER` |
 | `jwt.audience` | string | `"BambooUsers"` | `AUTH_JWT_AUDIENCE` |
-| `jwt.storage.driver` | string | `"json"` | — |
-| `jwt.storage.path` | string (path) | `"var/auth/users.json"` | `AUTH_JWT_USER_STORE` |
+| `jwt.storage.driver` | string | `"json"` | `AUTH_JWT_STORAGE_DRIVER` |
+| `jwt.storage.path` | string (path) | `"var/auth/users.json"` (JSON driver) | `AUTH_JWT_USER_STORE` |
 | `jwt.registration.enabled` | bool | `true` | `AUTH_JWT_ALLOW_REGISTRATION` |
 | `jwt.registration.default_roles` | array<string> | `[]` | — |
 
 **Notes**
 
 * The scaffolded `auth.jwt.setup` command publishes this configuration, ensures
-  `AUTH_JWT_SECRET` is generated, and seeds a default `admin` user. Rotate the
-  secret whenever credentials change to invalidate old tokens.
+  `AUTH_JWT_SECRET` is generated, and seeds a default `admin` user when the JSON
+  driver is active. Alternate drivers are left untouched so you can apply the
+  included schema guidance yourself. Rotate the secret whenever credentials
+  change to invalidate old tokens.【F:src/Console/Command/AuthJwtSetup.php†L52-L233】【F:etc/auth.php†L20-L181】
+* Driver-specific environment variables feed the nested storage definitions:
+  MySQL and PostgreSQL include DSNs, credentials, and SQL schema stubs, while
+  Firebase and generic NoSQL entries surface credential locations and document
+  structures.【F:etc/auth.php†L20-L181】
 * When `app.debug` is disabled, the configuration validator requires
   `jwt.secret` to be non-empty, mirroring the enforcement applied to
   `app.key`.

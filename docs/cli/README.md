@@ -215,7 +215,8 @@ The following sections capture the full contract for every command currently reg
   - Always prints `JWT authentication scaffolding is ready to use.` when the run completes successfully.
 - **Side effects:**
   - Creates `etc/auth.php` if absent by copying `stubs/auth/jwt-auth.php`.
-  - Seeds `var/auth/users.json` with an `admin` user (password `password`) when the store is empty.
+  - Seeds `var/auth/users.json` with an `admin` user (password `password`) when the JSON driver is active and the store is empty, leaving non-JSON backends untouched so you can apply migrations manually.
+  - Writes driver-specific configuration (JSON, MySQL, PostgreSQL, Firebase, NoSQL) to `etc/auth.php` based on `AUTH_JWT_STORAGE_DRIVER` and related environment variables.
   - Registers `Bamboo\Auth\Jwt\JwtAuthModule` in `etc/modules.php` if it is not already listed.
   - Writes a random 64-character hex secret to `.env` when `AUTH_JWT_SECRET` is missing.
   - Full walkthrough: [JWT Authentication CLI Toolkit](jwt-auth-toolkit.md).

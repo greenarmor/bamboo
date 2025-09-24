@@ -56,11 +56,13 @@ final class AuthJwtSetup extends Command
             $messages[] = 'Published etc/auth.php configuration.';
         }
 
-        [$storagePath, $wasSeeded] = $this->ensureUserStore();
-        if ($wasSeeded) {
-            $messages[] = sprintf('Seeded default admin user at %s (admin/password).', $storagePath);
+        $storage = $this->ensureUserStore();
+        if ($storage['seeded']) {
+            $messages[] = sprintf('Seeded default admin user at %s (admin/password).', $storage['descriptor']);
+        } elseif ($storage['driver'] === 'json') {
+            $messages[] = sprintf('User store ready at %s.', $storage['descriptor']);
         } else {
-            $messages[] = sprintf('User store ready at %s.', $storagePath);
+            $messages[] = sprintf('User store configured for %s.', $storage['descriptor']);
         }
 
         if ($this->ensureModuleRegistration()) {
@@ -135,32 +137,143 @@ final class AuthJwtSetup extends Command
     }
 
     /**
-     * @return array{0: string, 1: bool}
+     * @return array{driver: string, descriptor: string, seeded: bool}
      */
     private function ensureUserStore(): array
     {
         $configPath = $this->projectRoot . '/etc/auth.php';
-        $storage = 'var/auth/users.json';
+        $driver = 'json';
+        $storagePath = 'var/auth/users.json';
+        $storageConfig = [];
 
         if (file_exists($configPath)) {
             $config = require $configPath;
             if (is_array($config) && isset($config['jwt']) && is_array($config['jwt'])) {
-                $candidate = $config['jwt']['storage']['path'] ?? $storage;
-                if (is_string($candidate) && $candidate !== '') {
-                    $storage = $candidate;
+                $storageValue = $config['jwt']['storage'] ?? [];
+                if (is_array($storageValue)) {
+                    $storageConfig = $storageValue;
                 }
             }
         }
 
-        $absolute = $this->toAbsolutePath($storage);
-
-        if (!is_file($absolute) || trim((string) file_get_contents($absolute)) === '') {
-            $this->seedDefaultUser($absolute);
-
-            return [$absolute, true];
+        if (isset($storageConfig['driver']) && is_string($storageConfig['driver']) && $storageConfig['driver'] !== '') {
+            $driver = strtolower($storageConfig['driver']);
         }
 
-        return [$absolute, false];
+        if ($driver === 'json') {
+            $candidatePath = $storageConfig['path'] ?? null;
+
+            if (isset($storageConfig['drivers']) && is_array($storageConfig['drivers'])) {
+                $jsonDriver = $storageConfig['drivers']['json'] ?? null;
+                if (is_array($jsonDriver) && isset($jsonDriver['path']) && is_string($jsonDriver['path']) && $jsonDriver['path'] !== '') {
+                    $candidatePath = $jsonDriver['path'];
+                }
+            }
+
+            if (is_string($candidatePath) && $candidatePath !== '') {
+                $storagePath = $candidatePath;
+            }
+
+            $absolute = $this->toAbsolutePath($storagePath);
+
+            if (!is_file($absolute) || trim((string) file_get_contents($absolute)) === '') {
+                $this->seedDefaultUser($absolute);
+
+                return [
+                    'driver' => 'json',
+                    'descriptor' => $absolute,
+                    'seeded' => true,
+                ];
+            }
+
+            return [
+                'driver' => 'json',
+                'descriptor' => $absolute,
+                'seeded' => false,
+            ];
+        }
+
+        return [
+            'driver' => $driver,
+            'descriptor' => $this->describeUserStore($driver, $storageConfig),
+            'seeded' => false,
+        ];
+    }
+
+    /**
+     * @param array<string, mixed> $storage
+     */
+    private function describeUserStore(string $driver, array $storage): string
+    {
+        $drivers = $storage['drivers'] ?? [];
+        $driverConfig = [];
+
+        if (is_array($drivers) && isset($drivers[$driver]) && is_array($drivers[$driver])) {
+            $driverConfig = $drivers[$driver];
+        }
+
+        $label = match ($driver) {
+            'mysql' => 'MySQL',
+            'pgsql' => 'PostgreSQL',
+            'firebase' => 'Firebase',
+            'nosql' => 'NoSQL',
+            default => ucfirst($driver),
+        };
+
+        return match ($driver) {
+            'mysql', 'pgsql' => $this->describeSqlStore($label, $driverConfig, $storage),
+            'firebase' => $this->describeFirebaseStore($label, $driverConfig, $storage),
+            'nosql' => $this->describeNoSqlStore($label, $driverConfig, $storage),
+            default => sprintf('%s user storage', $label),
+        };
+    }
+
+    /**
+     * @param array<string, mixed> $driverConfig
+     * @param array<string, mixed> $storage
+     */
+    private function describeSqlStore(string $label, array $driverConfig, array $storage): string
+    {
+        $table = $driverConfig['table'] ?? ($storage['table'] ?? null);
+        if (!is_string($table) || $table === '') {
+            $table = 'auth_users';
+        }
+
+        return sprintf('%s table %s', $label, $table);
+    }
+
+    /**
+     * @param array<string, mixed> $driverConfig
+     * @param array<string, mixed> $storage
+     */
+    private function describeFirebaseStore(string $label, array $driverConfig, array $storage): string
+    {
+        $collection = $driverConfig['collection'] ?? ($storage['collection'] ?? null);
+        if (!is_string($collection) || $collection === '') {
+            $collection = 'auth_users';
+        }
+
+        return sprintf('%s collection %s', $label, $collection);
+    }
+
+    /**
+     * @param array<string, mixed> $driverConfig
+     * @param array<string, mixed> $storage
+     */
+    private function describeNoSqlStore(string $label, array $driverConfig, array $storage): string
+    {
+        $database = $driverConfig['database'] ?? ($storage['database'] ?? null);
+        $collection = $driverConfig['collection'] ?? ($storage['collection'] ?? null);
+
+        if (!is_string($database) || $database === '') {
+            $database = 'bamboo';
+        }
+
+        if (!is_string($collection) || $collection === '') {
+            $collection = 'auth_users';
+        }
+
+        return sprintf('%s collection %s.%s', $label, $database, $collection);
     }
 
     private function seedDefaultUser(string $path): void

@@ -28,10 +28,12 @@ When you run `auth.jwt.setup`, Bamboo prepares the following assets:
 | --- | --- | --- |
 | JWT secret | Adds a random 64-character secret to `.env` (creating the file from `.env.example` if needed). Used for signing issued tokens. | `.env` via `AUTH_JWT_SECRET` | 
 | Auth config | Publishes the JWT configuration stub that drives the module. | `etc/auth.php` | 
-| User store | Creates a JSON user repository and seeds an `admin` user (`password`). | `var/auth/users.json` (configurable) | 
+| User store | Creates a JSON user repository (default) and seeds an `admin` user (`password`). Alternate drivers (MySQL, PostgreSQL, Firebase, NoSQL) are scaffolded via configuration. | JSON: `var/auth/users.json` (configurable) |
 | Module registration | Ensures the `JwtAuthModule` is registered so routes and middleware load. | `etc/modules.php` |
 
-The setup command writes the env secret, copies the configuration stub, seeds the user store when empty, and registers the module if it is not already present.【F:src/Console/Command/AuthJwtSetup.php†L52-L126】【F:src/Console/Command/AuthJwtSetup.php†L152-L210】 The JSON user store is only seeded when the file is missing or blank, preventing accidental overwrites of real accounts.【F:src/Console/Command/AuthJwtSetup.php†L108-L139】
+The setup command writes the env secret, copies the configuration stub, seeds the user store when empty, and registers the module if it is not already present.【F:src/Console/Command/AuthJwtSetup.php†L52-L233】 The JSON user store is only seeded when the file is missing or blank, preventing accidental overwrites of real accounts, while alternate drivers are left untouched so you can manage migrations externally.【F:src/Console/Command/AuthJwtSetup.php†L108-L233】
+
+Set `AUTH_JWT_STORAGE_DRIVER` to `mysql`, `pgsql`, `firebase`, or `nosql` before running the command to tailor `etc/auth.php` to your preferred backend. The generated configuration includes connection placeholders and schema guidance for each driver, while continuing to default to the JSON file store when unset.【F:stubs/auth/jwt-auth.php†L20-L181】【F:etc/auth.php†L20-L181】
 
 ## Default routes and behaviour
 
@@ -72,14 +74,22 @@ All JWT settings are stored in `etc/auth.php`, which reads defaults from environ
 - `AUTH_JWT_SECRET` – signing key used by `JwtTokenService`; rotate this in production deployments.【F:stubs/auth/jwt-auth.php†L5-L38】【F:src/Auth/Jwt/JwtAuthModule.php†L19-L40】
 - `AUTH_JWT_TTL` – token lifetime in seconds (default `3600`).【F:stubs/auth/jwt-auth.php†L10-L33】【F:src/Auth/Jwt/JwtAuthModule.php†L23-L34】
 - `AUTH_JWT_ISSUER` / `AUTH_JWT_AUDIENCE` – metadata included in tokens for validation.【F:stubs/auth/jwt-auth.php†L14-L33】【F:src/Auth/Jwt/JwtAuthModule.php†L23-L34】
-- `AUTH_JWT_USER_STORE` – path to the JSON store; point this to shared storage in clustered environments.【F:stubs/auth/jwt-auth.php†L20-L34】【F:src/Auth/Jwt/JwtAuthModule.php†L15-L22】
+- `AUTH_JWT_STORAGE_DRIVER` – selects the user repository backend (`json`, `mysql`, `pgsql`, `firebase`, `nosql`). The generated configuration surfaces connection placeholders and schema guidance for each driver while defaulting to JSON when unset.【F:stubs/auth/jwt-auth.php†L20-L181】【F:etc/auth.php†L20-L181】
+- `AUTH_JWT_USER_STORE` – path to the JSON store when the JSON driver is active; point this to shared storage in clustered environments.【F:stubs/auth/jwt-auth.php†L20-L44】【F:src/Auth/Jwt/JwtAuthModule.php†L15-L28】
+- Driver-specific environment variables populate the nested configuration:
+  - MySQL: `AUTH_JWT_MYSQL_DSN`, `AUTH_JWT_MYSQL_USERNAME`, `AUTH_JWT_MYSQL_PASSWORD`, `AUTH_JWT_MYSQL_TABLE`.【F:stubs/auth/jwt-auth.php†L40-L89】
+  - PostgreSQL: `AUTH_JWT_PGSQL_DSN`, `AUTH_JWT_PGSQL_USERNAME`, `AUTH_JWT_PGSQL_PASSWORD`, `AUTH_JWT_PGSQL_TABLE`.【F:stubs/auth/jwt-auth.php†L91-L127】
+  - Firebase: `AUTH_JWT_FIREBASE_CREDENTIALS`, `AUTH_JWT_FIREBASE_DATABASE_URL`, `AUTH_JWT_FIREBASE_COLLECTION`.【F:stubs/auth/jwt-auth.php†L129-L152】
+  - NoSQL document stores: `AUTH_JWT_NOSQL_CONNECTION`, `AUTH_JWT_NOSQL_DATABASE`, `AUTH_JWT_NOSQL_COLLECTION`.【F:stubs/auth/jwt-auth.php†L154-L181】
 - `AUTH_JWT_ALLOW_REGISTRATION` – toggles the `/register` endpoint. The controller checks this flag before accepting new accounts.【F:stubs/auth/jwt-auth.php†L26-L37】【F:src/Auth/Jwt/AuthController.php†L33-L55】
 
 Updating the env variables and reloading your server is enough—the module resolves configuration at runtime.
 
 ## Maintaining the user store
 
-User records live in a JSON array with bcrypt password hashes. The setup command seeds an admin user with a random ID, email placeholder, and `admin` role metadata.【F:src/Console/Command/AuthJwtSetup.php†L126-L150】 To manage real accounts:
+By default user records live in a JSON array with bcrypt password hashes. The setup command seeds an admin user with a random ID, email placeholder, and `admin` role metadata.【F:src/Console/Command/AuthJwtSetup.php†L108-L233】 When you switch drivers, apply the schema guidance in `etc/auth.php` to your database and seed records using your preferred tooling.【F:etc/auth.php†L20-L181】
+
+To manage real accounts:
 
 - Replace the default password immediately after bootstrapping.
 - Use the `/register` endpoint or edit the JSON file directly (remember to hash passwords with `password_hash()` if you script changes).
@@ -90,8 +100,8 @@ User records live in a JSON array with bcrypt password hashes. The setup command
 Rerunning `php bin/bamboo auth.jwt.setup` performs drift correction without deleting existing users:
 
 - The command respects existing `AUTH_JWT_SECRET` values, only generating a new secret when the entry is missing or blank.【F:src/Console/Command/AuthJwtSetup.php†L72-L105】
-- User stores that already contain data are preserved.【F:src/Console/Command/AuthJwtSetup.php†L108-L139】
-- Module registration is skipped when `JwtAuthModule` is already listed.【F:src/Console/Command/AuthJwtSetup.php†L152-L210】
+- User stores that already contain data are preserved, and non-JSON backends are never mutated by the command.【F:src/Console/Command/AuthJwtSetup.php†L108-L233】
+- Module registration is skipped when `JwtAuthModule` is already listed.【F:src/Console/Command/AuthJwtSetup.php†L304-L347】
 
 This makes the command safe to wire into provisioning scripts, CI smoke tests, or recovery playbooks.
 
