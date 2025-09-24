@@ -85,7 +85,19 @@ class LandingPageContent {
         </dl>
       </section>
 
-      <section class="snippet" aria-label="Quick start commands">
+      <section class="faq" aria-label="Frequently asked questions">
+        <h2>Frequently asked questions</h2>
+        <article class="faq-item">
+          <h3>How is Bamboo different from using OpenSwoole alone?</h3>
+          <p>Bamboo layers a ready-to-ship microframework on top of OpenSwoole with a project structure, dependency injection container, configuration loader, and router so you start productive immediately instead of hand-wiring the runtime.</p>
+        </article>
+        <article class="faq-item">
+          <h3>Why choose Bamboo over Laravel, Node.js, or other API frameworks?</h3>
+          <p>Bamboo pairs PHP familiarity with an async engine, built-in observability, and an operations-focused CLI, delivering the speed of evented runtimes while keeping the maintainability of typed PHP services.</p>
+        </article>
+      </section>
+
+     <section class="snippet" aria-label="Quick start commands">
         <pre>
 $ composer create-project greenarmor/bamboo example-app
 $ cd example-app
