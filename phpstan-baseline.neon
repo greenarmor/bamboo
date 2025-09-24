@@ -152,26 +152,6 @@ parameters:
 			path: src/Console/Command/ScheduleRun.php
 
 		-
-			message: "#^Call to method on\\(\\) on an unknown class OpenSwoole\\\\WebSocket\\\\Server\\.$#"
-			count: 3
-			path: src/Console/Command/WsServe.php
-
-		-
-			message: "#^Call to method start\\(\\) on an unknown class OpenSwoole\\\\WebSocket\\\\Server\\.$#"
-			count: 1
-			path: src/Console/Command/WsServe.php
-
-		-
-			message: "#^Instantiated class OpenSwoole\\\\WebSocket\\\\Server not found\\.$#"
-			count: 1
-			path: src/Console/Command/WsServe.php
-
-		-
-			message: "#^Method Bamboo\\\\Console\\\\Command\\\\WsServe\\:\\:handle\\(\\) has parameter \\$args with no value type specified in iterable type array\\.$#"
-			count: 1
-			path: src/Console/Command/WsServe.php
-
-		-
 			message: "#^Call to an undefined method object\\:\\:description\\(\\)\\.$#"
 			count: 1
 			path: src/Console/Kernel.php
