@@ -218,6 +218,7 @@ The following sections capture the full contract for every command currently reg
   - Seeds `var/auth/users.json` with an `admin` user (password `password`) when the store is empty.
   - Registers `Bamboo\Auth\Jwt\JwtAuthModule` in `etc/modules.php` if it is not already listed.
   - Writes a random 64-character hex secret to `.env` when `AUTH_JWT_SECRET` is missing.
+  - Full walkthrough: [JWT Authentication CLI Toolkit](jwt-auth-toolkit.md).
 - **Guardrails:** [`tests/Console/AuthJwtSetupCommandTest.php`](../../tests/Console/AuthJwtSetupCommandTest.php) covers secret generation, module registration, and idempotent user store seeding.
 
 ### `cache.purge`
