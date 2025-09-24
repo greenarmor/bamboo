@@ -121,6 +121,7 @@ class Config {
       'database'=> file_exists($this->dir . '/database.php') ? require $this->dir . '/database.php' : [],
       'ws'      => require $this->dir . '/ws.php',
       'http'    => require $this->dir . '/http.php',
+      'auth'    => file_exists($this->dir . '/auth.php') ? require $this->dir . '/auth.php' : [],
       'middleware' => file_exists($this->dir . '/middleware.php') ? require $this->dir . '/middleware.php' : [],
       'metrics' => file_exists($this->dir . '/metrics.php') ? require $this->dir . '/metrics.php' : [
         'namespace' => 'bamboo',

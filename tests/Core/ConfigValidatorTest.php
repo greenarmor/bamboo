@@ -101,6 +101,7 @@ class ConfigValidatorTest extends TestCase
         $config = $this->validConfig();
         $config['app']['debug'] = false;
         $config['app']['key'] = '';
+        $config['auth']['jwt']['secret'] = 'secret';
 
         $validator = new ConfigValidator();
 
@@ -121,6 +122,7 @@ class ConfigValidatorTest extends TestCase
         $config['http']['default']['timeout'] = 0;
         $config['app']['debug'] = false;
         $config['app']['key'] = '';
+        $config['auth']['jwt']['secret'] = '';
 
         $validator = new ConfigValidator();
 
@@ -133,12 +135,74 @@ class ConfigValidatorTest extends TestCase
                 'redis.url must be a non-empty string.',
                 'http.default.timeout must be a positive number.',
                 'app.key must be set when app.debug is disabled.',
+                'auth.jwt.secret must be set when app.debug is disabled.',
             ];
 
             $this->assertSame($expected, $exception->errors());
             foreach ($expected as $message) {
                 $this->assertStringContainsString($message, $exception->getMessage());
             }
+        }
+    }
+
+    public function testAuthSecretRequiredWhenDebugDisabled(): void
+    {
+        $config = $this->validConfig();
+        $config['app']['debug'] = false;
+        $config['auth']['jwt']['secret'] = '';
+
+        $validator = new ConfigValidator();
+
+        try {
+            $validator->validate($config);
+            $this->fail('Expected ConfigurationException to be thrown.');
+        } catch (ConfigurationException $exception) {
+            $this->assertSame(['auth.jwt.secret must be set when app.debug is disabled.'], $exception->errors());
+        }
+    }
+
+    public function testAuthTtlMustBePositive(): void
+    {
+        $config = $this->validConfig();
+        $config['auth']['jwt']['ttl'] = 0;
+
+        $validator = new ConfigValidator();
+
+        try {
+            $validator->validate($config);
+            $this->fail('Expected ConfigurationException to be thrown.');
+        } catch (ConfigurationException $exception) {
+            $this->assertSame(['auth.jwt.ttl must be a positive integer.'], $exception->errors());
+        }
+    }
+
+    public function testAuthStoragePathMustBeString(): void
+    {
+        $config = $this->validConfig();
+        $config['auth']['jwt']['storage']['path'] = '';
+
+        $validator = new ConfigValidator();
+
+        try {
+            $validator->validate($config);
+            $this->fail('Expected ConfigurationException to be thrown.');
+        } catch (ConfigurationException $exception) {
+            $this->assertSame(['auth.jwt.storage.path must be a non-empty string path.'], $exception->errors());
+        }
+    }
+
+    public function testAuthDefaultRolesMustBeStrings(): void
+    {
+        $config = $this->validConfig();
+        $config['auth']['jwt']['registration']['default_roles'] = ['admin', ''];
+
+        $validator = new ConfigValidator();
+
+        try {
+            $validator->validate($config);
+            $this->fail('Expected ConfigurationException to be thrown.');
+        } catch (ConfigurationException $exception) {
+            $this->assertSame(['auth.jwt.registration.default_roles must contain only non-empty strings.'], $exception->errors());
         }
     }
 
@@ -214,6 +278,22 @@ class ConfigValidatorTest extends TestCase
                     ],
                 ],
                 'services' => [],
+            ],
+            'auth' => [
+                'jwt' => [
+                    'secret' => 'testing-secret',
+                    'ttl' => 3600,
+                    'issuer' => 'Bamboo',
+                    'audience' => 'BambooUsers',
+                    'storage' => [
+                        'driver' => 'json',
+                        'path' => '/tmp/bamboo-users.json',
+                    ],
+                    'registration' => [
+                        'enabled' => true,
+                        'default_roles' => ['user'],
+                    ],
+                ],
             ],
             'resilience' => [
                 'timeouts' => [

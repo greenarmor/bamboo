@@ -11,6 +11,7 @@ Bamboo's dot-notation console is the operational entry point for every deploymen
 | Command | Tier | Notes | Test coverage |
 |---------|------|-------|---------------|
 | `app.key.make` | Stable | Required for provisioning secrets in production deployments. | _Contract gap – add coverage in a future cycle._ |
+| `auth.jwt.setup` | Preview | Publishes JWT auth config, seeds a default user store, and registers the module. | [`tests/Console/AuthJwtSetupCommandTest.php`](../../tests/Console/AuthJwtSetupCommandTest.php) |
 | `cache.purge` | Stable | Clears framework caches without touching user data. Safe for automated rollouts. | _Contract gap – add coverage in a future cycle._ |
 | `client.call` | Preview | Intended for troubleshooting and lacks retry/back-off knobs. Marked preview until the ergonomics settle. | _Contract gap – add coverage in a future cycle._ |
 | `dev.watch` | Preview | Development helper that may add flags as the workflow evolves. | [`tests/Console/DevWatchTest.php`](../../tests/Console/DevWatchTest.php) |
@@ -203,3 +204,20 @@ The following sections capture the full contract for every command currently reg
 - `http.serve`, `queue.work`, `routes.show`, and `dev.watch` are covered by PHPUnit suites under [`tests/Console/`](../../tests/Console/). These tests lock the emitted banners, option parsing, and integration points documented above.
 - Remaining commands are flagged as contract gaps; track additions in the roadmap and extend the suite as they stabilise.
 - When adding new commands, include fixtures or smoke scripts that exercise their happy path, and wire them into `composer test` to keep the freeze enforceable.
+### `auth.jwt.setup`
+
+- **Purpose:** Publish JWT authentication scaffolding so new projects have login endpoints and a seeded user store.
+- **Inputs:**
+  - No flags today. Operates relative to the project root.
+- **Outputs & exit codes:**
+  - Generates an `AUTH_JWT_SECRET` in `.env` when missing, printing `Generated AUTH_JWT_SECRET in .env.` (exit code `0`).
+  - When the secret already exists, prints `AUTH_JWT_SECRET already present; leaving existing value.` (exit code `0`).
+  - Always prints `JWT authentication scaffolding is ready to use.` when the run completes successfully.
+- **Side effects:**
+  - Creates `etc/auth.php` if absent by copying `stubs/auth/jwt-auth.php`.
+  - Seeds `var/auth/users.json` with an `admin` user (password `password`) when the store is empty.
+  - Registers `Bamboo\Auth\Jwt\JwtAuthModule` in `etc/modules.php` if it is not already listed.
+  - Writes a random 64-character hex secret to `.env` when `AUTH_JWT_SECRET` is missing.
+- **Guardrails:** [`tests/Console/AuthJwtSetupCommandTest.php`](../../tests/Console/AuthJwtSetupCommandTest.php) covers secret generation, module registration, and idempotent user store seeding.
+
+### `cache.purge`
