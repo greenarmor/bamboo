@@ -20,6 +20,7 @@ for the v1.0 release. Use `composer validate:config` (which calls
 | `etc/metrics.php` | Prometheus namespace, storage driver, histogram buckets. |
 | `etc/resilience.php` | Request timeouts, circuit breaker thresholds, health checks. |
 | `etc/ws.php` | WebSocket server host and port. |
+| `etc/auth.php` | JWT authentication defaults and user store configuration. |
 
 ## Schema details
 
@@ -130,6 +131,23 @@ when OpenSwoole coroutine wait groups are unavailable.
 | `host` | string | `127.0.0.1` | `WS_HOST` |
 | `port` | int | `9502` | `WS_PORT` |
 
+### `etc/auth.php`
+
+| Key | Type | Default | Environment override |
+|-----|------|---------|-----------------------|
+| `jwt.secret` | string | empty string | `AUTH_JWT_SECRET` |
+| `jwt.ttl` | int | `3600` | `AUTH_JWT_TTL` |
+| `jwt.issuer` | string | `Bamboo` | `AUTH_JWT_ISSUER` |
+| `jwt.audience` | string | `BambooUsers` | `AUTH_JWT_AUDIENCE` |
+| `jwt.storage.driver` | string | `json` | — |
+| `jwt.storage.path` | string | `var/auth/users.json` | `AUTH_JWT_USER_STORE` |
+| `jwt.registration.enabled` | bool | `true` | `AUTH_JWT_ALLOW_REGISTRATION` |
+| `jwt.registration.default_roles` | array<string> | `[]` | — |
+
+When deploying authentication in production, ensure `AUTH_JWT_SECRET` is set
+before turning off `app.debug`. The `auth.jwt.setup` CLI command generates a
+secret, publishes this configuration file, and seeds a starter user store.
+
 ## Validation hooks
 
 - `Bamboo\Core\ConfigValidator` enforces the schema above. It raises
@@ -213,6 +231,28 @@ must remain in lock-step with that guardrail and its PHPUnit coverage.【F:boots
 | --- | --- | --- | --- |
 | `host` | non-empty string | `"127.0.0.1"` | `WS_HOST` |
 | `port` | integer 1–65535 | `9502` | `WS_PORT` |
+
+## etc/auth.php
+
+| Key | Type | Default | Environment variable |
+| --- | --- | --- | --- |
+| `jwt.secret` | string | `""` | `AUTH_JWT_SECRET` |
+| `jwt.ttl` | positive integer | `3600` | `AUTH_JWT_TTL` |
+| `jwt.issuer` | string | `"Bamboo"` | `AUTH_JWT_ISSUER` |
+| `jwt.audience` | string | `"BambooUsers"` | `AUTH_JWT_AUDIENCE` |
+| `jwt.storage.driver` | string | `"json"` | — |
+| `jwt.storage.path` | string (path) | `"var/auth/users.json"` | `AUTH_JWT_USER_STORE` |
+| `jwt.registration.enabled` | bool | `true` | `AUTH_JWT_ALLOW_REGISTRATION` |
+| `jwt.registration.default_roles` | array<string> | `[]` | — |
+
+**Notes**
+
+* The scaffolded `auth.jwt.setup` command publishes this configuration, ensures
+  `AUTH_JWT_SECRET` is generated, and seeds a default `admin` user. Rotate the
+  secret whenever credentials change to invalidate old tokens.
+* When `app.debug` is disabled, the configuration validator requires
+  `jwt.secret` to be non-empty, mirroring the enforcement applied to
+  `app.key`.
 
 ## etc/cache.php
 

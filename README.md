@@ -115,7 +115,7 @@ scaffolding.
 
 ## CLI
 http.serve, routes.show, routes.cache, cache.purge, app.key.make,
-config.validate, queue.work, ws.serve, dev.watch, schedule.run,
+auth.jwt.setup, config.validate, queue.work, ws.serve, dev.watch, schedule.run,
 pkg.info, client.call
 
 ### Benchmark tooling

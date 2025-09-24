@@ -117,6 +117,15 @@ class ConfigValidator
             }
         }
 
+        if (isset($config['auth'])) {
+            if (!is_array($config['auth'])) {
+                $errors[] = 'auth configuration must be an array.';
+            } else {
+                $appConfig = is_array($config['app'] ?? null) ? $config['app'] : [];
+                $errors = [...$errors, ...$this->validateAuth($config['auth'], $appConfig)];
+            }
+        }
+
         if ($errors !== []) {
             throw new ConfigurationException($errors);
         }
@@ -212,6 +221,86 @@ class ConfigValidator
                 $errors[] = 'resilience.health must be an array.';
             } elseif (isset($resilience['health']['dependencies']) && !is_array($resilience['health']['dependencies'])) {
                 $errors[] = 'resilience.health.dependencies must be an array.';
+            }
+        }
+
+        return $errors;
+    }
+
+    /**
+     * @param array<string, mixed> $auth
+     * @param array<string, mixed> $app
+     * @return array<int, string>
+     */
+    private function validateAuth(array $auth, array $app): array
+    {
+        $errors = [];
+
+        $jwt = $auth['jwt'] ?? null;
+        if (!is_array($jwt)) {
+            $errors[] = 'auth.jwt must be an array.';
+
+            return $errors;
+        }
+
+        $secret = $jwt['secret'] ?? '';
+        if (!is_string($secret)) {
+            $errors[] = 'auth.jwt.secret must be a string.';
+        } else {
+            $secret = trim($secret);
+            $debug = $app['debug'] ?? null;
+            if ($secret === '' && $debug === false) {
+                $errors[] = 'auth.jwt.secret must be set when app.debug is disabled.';
+            }
+        }
+
+        $ttl = $jwt['ttl'] ?? 3600;
+        if (!is_numeric($ttl) || (int) $ttl <= 0) {
+            $errors[] = 'auth.jwt.ttl must be a positive integer.';
+        }
+
+        if (!isset($jwt['issuer']) || !is_string($jwt['issuer']) || trim($jwt['issuer']) === '') {
+            $errors[] = 'auth.jwt.issuer must be a non-empty string.';
+        }
+
+        if (!isset($jwt['audience']) || !is_string($jwt['audience']) || trim($jwt['audience']) === '') {
+            $errors[] = 'auth.jwt.audience must be a non-empty string.';
+        }
+
+        if (!isset($jwt['storage']) || !is_array($jwt['storage'])) {
+            $errors[] = 'auth.jwt.storage must be an array.';
+        } else {
+            $driver = $jwt['storage']['driver'] ?? null;
+            if ($driver !== null && !is_string($driver)) {
+                $errors[] = 'auth.jwt.storage.driver must be a string when provided.';
+            }
+
+            $path = $jwt['storage']['path'] ?? null;
+            if (!is_string($path) || trim($path) === '') {
+                $errors[] = 'auth.jwt.storage.path must be a non-empty string path.';
+            }
+        }
+
+        if (isset($jwt['registration'])) {
+            if (!is_array($jwt['registration'])) {
+                $errors[] = 'auth.jwt.registration must be an array when provided.';
+            } else {
+                if (isset($jwt['registration']['enabled']) && !is_bool($jwt['registration']['enabled'])) {
+                    $errors[] = 'auth.jwt.registration.enabled must be a boolean value when provided.';
+                }
+
+                if (isset($jwt['registration']['default_roles'])) {
+                    if (!is_array($jwt['registration']['default_roles'])) {
+                        $errors[] = 'auth.jwt.registration.default_roles must be an array of strings.';
+                    } else {
+                        foreach ($jwt['registration']['default_roles'] as $role) {
+                            if (!is_string($role) || trim($role) === '') {
+                                $errors[] = 'auth.jwt.registration.default_roles must contain only non-empty strings.';
+                                break;
+                            }
+                        }
+                    }
+                }
             }
         }
 

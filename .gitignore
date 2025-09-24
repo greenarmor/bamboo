@@ -1,5 +1,6 @@
 /vendor/
 /var/cache/*
+/var/auth/*
 /var/log/*
 .env
 .idea/
