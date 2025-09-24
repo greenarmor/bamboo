@@ -25,6 +25,9 @@ final class JsonUserRepository
         return $this->readUsers();
     }
 
+    /**
+     * @return array<string, mixed>|null
+     */
     public function find(string $username): ?array
     {
         $username = trim($username);
@@ -47,6 +50,7 @@ final class JsonUserRepository
 
     /**
      * @param array<string, mixed> $attributes
+     * @return array<string, mixed>|null
      */
     public function create(string $username, string $password, array $attributes = []): ?array
     {
@@ -82,6 +86,9 @@ final class JsonUserRepository
         return $user;
     }
 
+    /**
+     * @return array<string, mixed>|null
+     */
     public function verifyCredentials(string $username, string $password): ?array
     {
         $user = $this->find($username);

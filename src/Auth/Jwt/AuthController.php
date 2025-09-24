@@ -170,6 +170,9 @@ final class AuthController
         return array_values(array_unique($normalized));
     }
 
+    /**
+     * @param array<string, mixed> $payload
+     */
     private function jsonResponse(int $status, array $payload): ResponseInterface
     {
         return new Response($status, ['Content-Type' => 'application/json'], json_encode($payload, JSON_THROW_ON_ERROR));
