@@ -1,87 +1,87 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>
-         <loc>https://bamboo.github.io/</loc>
+         <loc>https://greenarmor.github.io/bamboo/</loc>
          <lastmod>2025-09-25</lastmod>
     </url>
     <url>
-         <loc>https://bamboo.github.io/Install-Bamboo-PHP82/</loc>
+         <loc>https://greenarmor.github.io/bamboo/Install-Bamboo-PHP82/</loc>
          <lastmod>2025-09-25</lastmod>
     </url>
     <url>
-         <loc>https://bamboo.github.io/Install-Bamboo-PHP83/</loc>
+         <loc>https://greenarmor.github.io/bamboo/Install-Bamboo-PHP83/</loc>
          <lastmod>2025-09-25</lastmod>
     </url>
     <url>
-         <loc>https://bamboo.github.io/Install-Bamboo-PHP84/</loc>
+         <loc>https://greenarmor.github.io/bamboo/Install-Bamboo-PHP84/</loc>
          <lastmod>2025-09-25</lastmod>
     </url>
     <url>
-         <loc>https://bamboo.github.io/OpenSwoole-Compat-and-Fixes/</loc>
+         <loc>https://greenarmor.github.io/bamboo/OpenSwoole-Compat-and-Fixes/</loc>
          <lastmod>2025-09-25</lastmod>
     </url>
     <url>
-         <loc>https://bamboo.github.io/modules/</loc>
+         <loc>https://greenarmor.github.io/bamboo/modules/</loc>
          <lastmod>2025-09-25</lastmod>
     </url>
     <url>
-         <loc>https://bamboo.github.io/router/</loc>
+         <loc>https://greenarmor.github.io/bamboo/router/</loc>
          <lastmod>2025-09-25</lastmod>
     </url>
     <url>
-         <loc>https://bamboo.github.io/benchmarks/</loc>
+         <loc>https://greenarmor.github.io/bamboo/benchmarks/</loc>
          <lastmod>2025-09-25</lastmod>
     </url>
     <url>
-         <loc>https://bamboo.github.io/benchmarks/data/20240528-baseline/</loc>
+         <loc>https://greenarmor.github.io/bamboo/benchmarks/data/20240528-baseline/</loc>
          <lastmod>2025-09-25</lastmod>
     </url>
     <url>
-         <loc>https://bamboo.github.io/cli/</loc>
+         <loc>https://greenarmor.github.io/bamboo/cli/</loc>
          <lastmod>2025-09-25</lastmod>
     </url>
     <url>
-         <loc>https://bamboo.github.io/cli/jwt-auth-toolkit/</loc>
+         <loc>https://greenarmor.github.io/bamboo/cli/jwt-auth-toolkit/</loc>
          <lastmod>2025-09-25</lastmod>
     </url>
     <url>
-         <loc>https://bamboo.github.io/configuration/overview/</loc>
+         <loc>https://greenarmor.github.io/bamboo/configuration/overview/</loc>
          <lastmod>2025-09-25</lastmod>
     </url>
     <url>
-         <loc>https://bamboo.github.io/roadmap/v0.3-prep/</loc>
+         <loc>https://greenarmor.github.io/bamboo/roadmap/v0.3-prep/</loc>
          <lastmod>2025-09-25</lastmod>
     </url>
     <url>
-         <loc>https://bamboo.github.io/roadmap/v0.4-prep/</loc>
+         <loc>https://greenarmor.github.io/bamboo/roadmap/v0.4-prep/</loc>
          <lastmod>2025-09-25</lastmod>
     </url>
     <url>
-         <loc>https://bamboo.github.io/roadmap/v1.0-prep/</loc>
+         <loc>https://greenarmor.github.io/bamboo/roadmap/v1.0-prep/</loc>
          <lastmod>2025-09-25</lastmod>
     </url>
     <url>
-         <loc>https://bamboo.github.io/starters/</loc>
+         <loc>https://greenarmor.github.io/bamboo/starters/</loc>
          <lastmod>2025-09-25</lastmod>
     </url>
     <url>
-         <loc>https://bamboo.github.io/tasks/</loc>
+         <loc>https://greenarmor.github.io/bamboo/tasks/</loc>
          <lastmod>2025-09-25</lastmod>
     </url>
     <url>
-         <loc>https://bamboo.github.io/tasks/benchmarks-baseline-dataset/</loc>
+         <loc>https://greenarmor.github.io/bamboo/tasks/benchmarks-baseline-dataset/</loc>
          <lastmod>2025-09-25</lastmod>
     </url>
     <url>
-         <loc>https://bamboo.github.io/tasks/config-validation-ci/</loc>
+         <loc>https://greenarmor.github.io/bamboo/tasks/config-validation-ci/</loc>
          <lastmod>2025-09-25</lastmod>
     </url>
     <url>
-         <loc>https://bamboo.github.io/tasks/upgrade-guide-config-deprecations/</loc>
+         <loc>https://greenarmor.github.io/bamboo/tasks/upgrade-guide-config-deprecations/</loc>
          <lastmod>2025-09-25</lastmod>
     </url>
     <url>
-         <loc>https://bamboo.github.io/upgrade/v1.0/</loc>
+         <loc>https://greenarmor.github.io/bamboo/upgrade/v1.0/</loc>
          <lastmod>2025-09-25</lastmod>
     </url>
 </urlset>
