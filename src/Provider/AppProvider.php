@@ -3,6 +3,7 @@ namespace Bamboo\Provider;
 use Bamboo\Core\Application;
 use Bamboo\Web\ProblemDetailsHandler;
 use Bamboo\Web\RequestContext;
+use Bamboo\Web\View\Engine\TemplateEngineManager;
 use Monolog\Handler\StreamHandler;
 use Monolog\Level;
 use Monolog\LogRecord;
@@ -34,6 +35,8 @@ class AppProvider {
         return new \Predis\Client($url, $options);
       };
     });
+    $app->singleton(TemplateEngineManager::class, fn() => new TemplateEngineManager($app));
+    $app->bind('view.engine', fn() => $app->get(TemplateEngineManager::class));
     // HTTP Client facade
     $app->singleton(\Bamboo\Http\Client::class, fn() => new \Bamboo\Http\Client($app));
     $app->bind('http.client', fn() => $app->get(\Bamboo\Http\Client::class));

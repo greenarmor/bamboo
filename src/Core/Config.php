@@ -132,6 +132,17 @@ class Config {
           'default' => [0.05, 0.1, 0.25, 0.5, 1.0, 2.5, 5.0],
         ],
       ],
+      'view' => file_exists($this->dir . '/view.php') ? require $this->dir . '/view.php' : [
+        'default' => 'components',
+        'pages' => [
+          'landing' => null,
+        ],
+        'engines' => [
+          'components' => [
+            'driver' => 'components',
+          ],
+        ],
+      ],
       'resilience' => file_exists($this->dir . '/resilience.php') ? require $this->dir . '/resilience.php' : [
         'timeouts' => [
           'default' => 3.0,

@@ -17,6 +17,7 @@ for the v1.0 release. Use `composer validate:config` (which calls
 | `etc/redis.php` | Redis connection string and queue name. |
 | `etc/database.php` | Optional database connection definitions. |
 | `etc/http.php` | HTTP client defaults and named service endpoints. |
+| `etc/view.php` | View engine defaults, per-page overrides, and driver definitions. |
 | `etc/metrics.php` | Prometheus namespace, storage driver, histogram buckets. |
 | `etc/resilience.php` | Request timeouts, circuit breaker thresholds, health checks. |
 | `etc/ws.php` | WebSocket server host and port. |
@@ -92,6 +93,21 @@ environment variables `DB_CONNECTION`, `DB_HOST`, `DB_PORT`, `DB_DATABASE`,
 | `default.retries.base_delay_ms` | int | Exponential backoff base delay in milliseconds. |
 | `default.retries.status_codes` | array<int> | HTTP status codes that trigger a retry. |
 | `services` | array<string, array> | Named services with overrides such as `base_uri` and `timeout`. |
+
+### `etc/view.php`
+
+| Key | Type | Default | Notes |
+|-----|------|---------|-------|
+| `default` | string | `components` | Engine resolved when no per-page override is configured. |
+| `pages.landing` | string\|null | `null` | Optional override for the landing route; must reference an engine name when set. |
+| `engines.*.driver` | string | varies | Maps engine names to driver identifiers consumed by the template manager. |
+
+`TemplateEngineManager` reads this file to decide which renderer should
+produce HTML for the landing page and any future view surfaces. Custom
+drivers can be registered in service providers or bootstrap scripts via
+`TemplateEngineManager::extend()`; setting `view.default` or per-page
+overrides to those names will switch Bamboo to your preferred templating
+engine without touching route handlers.【F:etc/view.php†L1-L12】【F:src/Web/View/Engine/TemplateEngineManager.php†L7-L93】【F:src/Web/View/LandingPageContent.php†L6-L117】
 
 ### `etc/metrics.php`
 
@@ -193,6 +209,9 @@ must remain in lock-step with that guardrail and its PHPUnit coverage.【F:boots
 * When the metrics or resilience configuration files are absent, Bamboo injects
   in-memory Prometheus storage and baseline timeout/circuit-breaker settings so
   observability and safeguards still work in local development environments.【F:src/Core/Config.php†L89-L107】
+* When `etc/view.php` is missing Bamboo falls back to the built-in
+  `components` driver so the landing page keeps rendering without extra
+  setup.【F:src/Core/Config.php†L83-L107】【F:etc/view.php†L1-L12】
 * Environment variables are read directly inside the configuration files, so the
   tables below double as the canonical mapping between `.env` keys and runtime
   behaviour.

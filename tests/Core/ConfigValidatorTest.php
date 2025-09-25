@@ -191,6 +191,42 @@ class ConfigValidatorTest extends TestCase
         }
     }
 
+    public function testViewConfigurationRequiresDefaultAndEngines(): void
+    {
+        $config = $this->validConfig();
+        $config['view']['default'] = '';
+        $config['view']['engines'] = [];
+
+        $validator = new ConfigValidator();
+
+        try {
+            $validator->validate($config);
+            $this->fail('Expected ConfigurationException to be thrown.');
+        } catch (ConfigurationException $exception) {
+            $this->assertSame([
+                'view.default must be a non-empty string.',
+                'view.engines must be an associative array of engine definitions.',
+            ], $exception->errors());
+        }
+    }
+
+    public function testViewPageOverrideMustReferenceKnownEngine(): void
+    {
+        $config = $this->validConfig();
+        $config['view']['pages']['landing'] = 'custom';
+
+        $validator = new ConfigValidator();
+
+        try {
+            $validator->validate($config);
+            $this->fail('Expected ConfigurationException to be thrown.');
+        } catch (ConfigurationException $exception) {
+            $this->assertSame([
+                'view.pages.landing references unknown engine "custom".',
+            ], $exception->errors());
+        }
+    }
+
     public function testAuthDefaultRolesMustBeStrings(): void
     {
         $config = $this->validConfig();
@@ -292,6 +328,17 @@ class ConfigValidatorTest extends TestCase
                     'registration' => [
                         'enabled' => true,
                         'default_roles' => ['user'],
+                    ],
+                ],
+            ],
+            'view' => [
+                'default' => 'components',
+                'pages' => [
+                    'landing' => null,
+                ],
+                'engines' => [
+                    'components' => [
+                        'driver' => 'components',
                     ],
                 ],
             ],

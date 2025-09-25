@@ -228,6 +228,18 @@ endpoints, an HTTP client demo that concurrently calls httpbin, and a
 Redis-backed job enqueue endpoint, illustrating how modules plug into the
 container and shared services.
 
+### View layer
+
+Landing page markup is generated from a structured component tree so
+developers can swap rendering strategies without touching the routing
+stack. `LandingPageContent` assembles the data payload while the
+`TemplateEngineManager` selects a driver from `etc/view.php` to turn the
+template into HTML. The stock `components` driver renders the bundled
+hero, feature grid, statistics, FAQ, and footer, but you can register
+custom drivers (Blade, Twig, Latte, etc.) via
+`TemplateEngineManager::extend()` and set them as the default or per-page
+engine in configuration.【F:src/Web/View/LandingPageContent.php†L6-L117】【F:src/Web/View/Engine/TemplateEngineManager.php†L7-L93】【F:etc/view.php†L1-L12】
+
 ### CLI & operations
 
 The CLI boots via `bin/bamboo`, instantiates the console kernel, and

@@ -126,6 +126,15 @@ class ConfigValidator
             }
         }
 
+        if (isset($config['view'])) {
+            if (!is_array($config['view'])) {
+                $errors[] = 'view configuration must be an array.';
+            } else {
+                $viewErrors = $this->validateView($config['view']);
+                $errors = [...$errors, ...$viewErrors];
+            }
+        }
+
         if ($errors !== []) {
             throw new ConfigurationException($errors);
         }
@@ -134,6 +143,74 @@ class ConfigValidator
     private function isNumeric(mixed $value): bool
     {
         return is_int($value) || is_float($value);
+    }
+
+    /**
+     * @param array<string, mixed> $view
+     * @return array<int, string>
+     */
+    private function validateView(array $view): array
+    {
+        $errors = [];
+
+        $default = $view['default'] ?? null;
+        if (!is_string($default) || trim($default) === '') {
+            $errors[] = 'view.default must be a non-empty string.';
+        }
+
+        $engines = $view['engines'] ?? null;
+        if (!is_array($engines) || $engines === []) {
+            $errors[] = 'view.engines must be an associative array of engine definitions.';
+            $engines = [];
+        } else {
+            foreach ($engines as $name => $engineConfig) {
+                if (!is_string($name) || trim($name) === '') {
+                    $errors[] = 'view.engines keys must be non-empty strings.';
+                    continue;
+                }
+
+                if (!is_array($engineConfig)) {
+                    $errors[] = sprintf('view.engines.%s must be an array.', $name);
+                    continue;
+                }
+
+                if (!array_key_exists('driver', $engineConfig) || !is_string($engineConfig['driver']) || trim($engineConfig['driver']) === '') {
+                    $errors[] = sprintf('view.engines.%s.driver must be a non-empty string.', $name);
+                }
+            }
+        }
+
+        if (is_string($default) && trim($default) !== '' && $engines !== [] && !array_key_exists($default, $engines)) {
+            $errors[] = sprintf('view.default references unknown engine "%s".', $default);
+        }
+
+        if (isset($view['pages'])) {
+            if (!is_array($view['pages'])) {
+                $errors[] = 'view.pages must be an array.';
+            } else {
+                foreach ($view['pages'] as $page => $engineName) {
+                    if (!is_string($page) || trim($page) === '') {
+                        $errors[] = 'view.pages keys must be non-empty strings.';
+                        continue;
+                    }
+
+                    if ($engineName === null) {
+                        continue;
+                    }
+
+                    if (!is_string($engineName) || trim($engineName) === '') {
+                        $errors[] = sprintf('view.pages.%s must be null or a non-empty string.', $page);
+                        continue;
+                    }
+
+                    if ($engines !== [] && !array_key_exists($engineName, $engines)) {
+                        $errors[] = sprintf('view.pages.%s references unknown engine "%s".', $page, $engineName);
+                    }
+                }
+            }
+        }
+
+        return $errors;
     }
 
     /**

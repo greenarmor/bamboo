@@ -6,6 +6,8 @@ use Bamboo\Provider\AppProvider;
 use Bamboo\Provider\MetricsProvider;
 use Bamboo\Core\Application;
 use Bamboo\Core\Config;
+use Bamboo\Web\View\Engine\TemplateEngineInterface;
+use Bamboo\Web\View\Engine\TemplateEngineManager;
 use Nyholm\Psr7\Factory\Psr17Factory;
 use Nyholm\Psr7\Response;
 use Nyholm\Psr7\ServerRequest;
@@ -13,6 +15,7 @@ use Prometheus\RenderTextFormat;
 use PHPUnit\Framework\TestCase;
 use Tests\Stubs\PredisFakeServer;
 use Tests\Stubs\PredisMemoryConnection;
+use ReflectionClass;
 
 class ApplicationRoutesTest extends TestCase {
   protected function setUp(): void {
@@ -98,6 +101,34 @@ class ApplicationRoutesTest extends TestCase {
     );
     $this->assertSame('Bamboo makes high-performance PHP approachable.', $meta['description'] ?? null);
     $this->assertArrayHasKey('generated_at', $meta);
+  }
+
+  public function testLandingPageRespectsCustomTemplateEngine(): void {
+    $app = $this->createApp();
+    $config = $app->get(Config::class);
+    $this->overrideViewConfig($config, function(array $items) {
+      $items['view']['default'] = 'custom';
+      $items['view']['engines']['custom'] = ['driver' => 'custom'];
+      return $items;
+    });
+
+    /** @var TemplateEngineManager $manager */
+    $manager = $app->get(TemplateEngineManager::class);
+    $manager->extend('custom', function(Application $app, array $engineConfig) {
+      return new class implements TemplateEngineInterface {
+        public function render(array $template, array $context = []): string {
+          return 'custom:' . ($template['component'] ?? 'unknown');
+        }
+      };
+    });
+
+    $response = $app->handle(new ServerRequest('GET', '/api/landing'));
+
+    $this->assertSame(200, $response->getStatusCode());
+
+    $payload = json_decode((string) $response->getBody(), true, flags: JSON_THROW_ON_ERROR);
+    $this->assertIsArray($payload);
+    $this->assertSame('custom:page', $payload['html'] ?? null);
   }
 
   public function testHelloRouteGreetsName(): void {
@@ -207,5 +238,18 @@ class ApplicationRoutesTest extends TestCase {
     }
 
     return 'not installed';
+  }
+
+  /**
+   * @param callable(array<string,mixed>):array<string,mixed> $mutator
+   */
+  private function overrideViewConfig(Config $config, callable $mutator): void {
+    $ref = new ReflectionClass($config);
+    $property = $ref->getProperty('items');
+    $property->setAccessible(true);
+    /** @var array<string,mixed> $items */
+    $items = $property->getValue($config);
+    $items = $mutator($items);
+    $property->setValue($config, $items);
   }
 }
