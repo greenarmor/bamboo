@@ -11,15 +11,15 @@ Bamboo's dot-notation console is the operational entry point for every deploymen
 | Command | Tier | Notes | Test coverage |
 |---------|------|-------|---------------|
 | `app.key.make` | Stable | Required for provisioning secrets in production deployments. | _Contract gap – add coverage in a future cycle._ |
-| `auth.jwt.setup` | Preview | Publishes JWT auth config, seeds a default user store, and registers the module. | [`tests/Console/AuthJwtSetupCommandTest.php`](../../tests/Console/AuthJwtSetupCommandTest.php) |
+| `auth.jwt.setup` | Preview | Publishes JWT auth config, seeds a default user store, and registers the module. | [`tests/Console/AuthJwtSetupCommandTest.php`](https://github.com/greenarmor/bamboo/blob/main/tests/Console/AuthJwtSetupCommandTest.php) |
 | `cache.purge` | Stable | Clears framework caches without touching user data. Safe for automated rollouts. | _Contract gap – add coverage in a future cycle._ |
 | `client.call` | Preview | Intended for troubleshooting and lacks retry/back-off knobs. Marked preview until the ergonomics settle. | _Contract gap – add coverage in a future cycle._ |
-| `dev.watch` | Preview | Development helper that may add flags as the workflow evolves. | [`tests/Console/DevWatchTest.php`](../../tests/Console/DevWatchTest.php) |
-| `http.serve` | Stable | Entry point for OpenSwoole HTTP hosts. Behaviour is locked for v1.x. | [`tests/Console/HttpServeCommandTest.php`](../../tests/Console/HttpServeCommandTest.php) |
+| `dev.watch` | Preview | Development helper that may add flags as the workflow evolves. | [`tests/Console/DevWatchTest.php`](https://github.com/greenarmor/bamboo/blob/main/tests/Console/DevWatchTest.php) |
+| `http.serve` | Stable | Entry point for OpenSwoole HTTP hosts. Behaviour is locked for v1.x. | [`tests/Console/HttpServeCommandTest.php`](https://github.com/greenarmor/bamboo/blob/main/tests/Console/HttpServeCommandTest.php) |
 | `pkg.info` | Internal | Diagnostics command that scrapes Composer metadata. Not covered by semver guarantees. | _Internal-only – explicitly excluded from contract tests._ |
-| `queue.work` | Stable | Runs background workers and honours deployment-critical flags. | [`tests/Console/QueueWorkCommandTest.php`](../../tests/Console/QueueWorkCommandTest.php) |
+| `queue.work` | Stable | Runs background workers and honours deployment-critical flags. | [`tests/Console/QueueWorkCommandTest.php`](https://github.com/greenarmor/bamboo/blob/main/tests/Console/QueueWorkCommandTest.php) |
 | `routes.cache` | Stable | Required for warm boots in production. | _Contract gap – add coverage in a future cycle._ |
-| `routes.show` | Stable | Used in CI drift checks to confirm routing tables. | [`tests/Console/RoutesShowCommandTest.php`](../../tests/Console/RoutesShowCommandTest.php) |
+| `routes.show` | Stable | Used in CI drift checks to confirm routing tables. | [`tests/Console/RoutesShowCommandTest.php`](https://github.com/greenarmor/bamboo/blob/main/tests/Console/RoutesShowCommandTest.php) |
 | `schedule.run` | Stable | Cron entry point; prints structured ticks for log shipping. | _Contract gap – add coverage in a future cycle._ |
 | `ws.serve` | Preview | Simple echo server meant for local verification. Subject to change when full duplex APIs land. | _Contract gap – add coverage in a future cycle._ |
 
@@ -60,7 +60,7 @@ The following sections capture the full contract for every command currently reg
 
 - **Purpose:** Delete generated cache artifacts (including `var/cache/routes.cache.php`).
 - **Inputs:**
-  - No command arguments. Reads the purge target from `cache.path` in [`etc/cache.php`](../../etc/cache.php).
+  - No command arguments. Reads the purge target from `cache.path` in [`etc/cache.php`](https://github.com/greenarmor/bamboo/blob/main/etc/cache.php).
   - Requires file-system permissions to remove cache files.
 - **Outputs & exit codes:**
   - Prints `No cache directory.` when the directory is missing (exit code `0`).
@@ -98,20 +98,20 @@ The following sections capture the full contract for every command currently reg
   - Returns exit code `0` on normal shutdown; returns `1` when option parsing or watcher setup fails.
 - **Side effects:**
   - Spawns and restarts the supervised process; responds to `SIGINT`/`SIGTERM` when supported.
-- **Guardrails:** Behaviour validated by [`tests/Console/DevWatchTest.php`](../../tests/Console/DevWatchTest.php), covering option parsing, restart loops, and logger payloads.
+- **Guardrails:** Behaviour validated by [`tests/Console/DevWatchTest.php`](https://github.com/greenarmor/bamboo/blob/main/tests/Console/DevWatchTest.php), covering option parsing, restart loops, and logger payloads.
 
 ### `http.serve`
 
 - **Purpose:** Boot the OpenSwoole HTTP server with Bamboo's application kernel.
 - **Inputs:**
-  - Reads server configuration from [`etc/server.php`](../../etc/server.php) and environment variables (`HTTP_HOST`, `HTTP_PORT`, `HTTP_WORKERS`, `TASK_WORKERS`, `MAX_REQUESTS`, `STATIC_ENABLED`).
+  - Reads server configuration from [`etc/server.php`](https://github.com/greenarmor/bamboo/blob/main/etc/server.php) and environment variables (`HTTP_HOST`, `HTTP_PORT`, `HTTP_WORKERS`, `TASK_WORKERS`, `MAX_REQUESTS`, `STATIC_ENABLED`).
   - Honours the `DISABLE_HTTP_SERVER_START` env flag for tests and dry runs; when truthy, skips calling `OpenSwoole\HTTP\Server::start()`.
 - **Outputs & exit codes:**
   - Prints `Bamboo HTTP online at http://<host>:<port>` when the server is initialised.
   - Additional lifecycle messages are emitted via OpenSwoole event callbacks; the command returns `0` when the bootstrap script completes without uncaught exceptions.
 - **Side effects:**
   - Starts the async server loop; records instrumentation via `Bamboo\Swoole\ServerInstrumentation` and toggles readiness probes exposed by `Bamboo\Web\Health\HealthState`.
-- **Guardrails:** [`tests/Console/HttpServeCommandTest.php`](../../tests/Console/HttpServeCommandTest.php) verifies the boot banner, instrumentation hooks, and environment flag handling.
+- **Guardrails:** [`tests/Console/HttpServeCommandTest.php`](https://github.com/greenarmor/bamboo/blob/main/tests/Console/HttpServeCommandTest.php) verifies the boot banner, instrumentation hooks, and environment flag handling.
 
 ### `pkg.info`
 
@@ -132,7 +132,7 @@ The following sections capture the full contract for every command currently reg
   - Flags:
     - `--once` processes a single job then exits.
     - `--max-jobs=<n>` (or `--max-jobs <n>`) limits the number of jobs processed before shutdown.
-  - Pulls Redis connection details from [`etc/redis.php`](../../etc/redis.php) or container overrides of `redis.client.factory`.
+  - Pulls Redis connection details from [`etc/redis.php`](https://github.com/greenarmor/bamboo/blob/main/etc/redis.php) or container overrides of `redis.client.factory`.
   - Requires a Predis client factory bound in the container.
 - **Outputs & exit codes:**
   - Prints `Worker listening on '<queue>'` when the loop starts.
@@ -140,13 +140,13 @@ The following sections capture the full contract for every command currently reg
   - Returns exit code `0` after the loop finishes (either via limits or shutdown signals).
 - **Side effects:**
   - Performs blocking `BLPOP` calls against the configured Redis queue.
-- **Guardrails:** [`tests/Console/QueueWorkCommandTest.php`](../../tests/Console/QueueWorkCommandTest.php) seeds an in-memory Predis server and asserts flag handling plus output formatting.
+- **Guardrails:** [`tests/Console/QueueWorkCommandTest.php`](https://github.com/greenarmor/bamboo/blob/main/tests/Console/QueueWorkCommandTest.php) seeds an in-memory Predis server and asserts flag handling plus output formatting.
 
 ### `routes.cache`
 
 - **Purpose:** Serialize the application's route table to a cache file for faster boots.
 - **Inputs:**
-  - No command arguments. Uses `cache.routes` from [`etc/cache.php`](../../etc/cache.php) to determine the target file.
+  - No command arguments. Uses `cache.routes` from [`etc/cache.php`](https://github.com/greenarmor/bamboo/blob/main/etc/cache.php) to determine the target file.
   - Requires the `router` service to implement a `cacheTo(<path>)` method.
 - **Outputs & exit codes:**
   - Prints `Routes cached -> <file>` on success (exit code `0`).
@@ -165,7 +165,7 @@ The following sections capture the full contract for every command currently reg
   - Returns exit code `0` after iterating all routes.
 - **Side effects:**
   - Read-only.
-- **Guardrails:** [`tests/Console/RoutesShowCommandTest.php`](../../tests/Console/RoutesShowCommandTest.php) confirms the formatted output for controller and closure handlers.
+- **Guardrails:** [`tests/Console/RoutesShowCommandTest.php`](https://github.com/greenarmor/bamboo/blob/main/tests/Console/RoutesShowCommandTest.php) confirms the formatted output for controller and closure handlers.
 
 ### `schedule.run`
 
@@ -182,7 +182,7 @@ The following sections capture the full contract for every command currently reg
 
 - **Purpose:** Start a simple OpenSwoole WebSocket echo server for development validation.
 - **Inputs:**
-  - Reads host/port from [`etc/ws.php`](../../etc/ws.php) and associated environment variables (`WS_HOST`, `WS_PORT`).
+  - Reads host/port from [`etc/ws.php`](https://github.com/greenarmor/bamboo/blob/main/etc/ws.php) and associated environment variables (`WS_HOST`, `WS_PORT`).
 - **Outputs & exit codes:**
   - Prints `WS on ws://<host>:<port>` when the server starts.
   - Emits `WS <fd> open/closed` events to stdout as clients connect/disconnect.
@@ -201,7 +201,7 @@ The following sections capture the full contract for every command currently reg
 
 ## Testing hooks
 
-- `http.serve`, `queue.work`, `routes.show`, and `dev.watch` are covered by PHPUnit suites under [`tests/Console/`](../../tests/Console/). These tests lock the emitted banners, option parsing, and integration points documented above.
+- `http.serve`, `queue.work`, `routes.show`, and `dev.watch` are covered by PHPUnit suites under [`tests/Console/`](https://github.com/greenarmor/bamboo/blob/main/tests/Console/). These tests lock the emitted banners, option parsing, and integration points documented above.
 - Remaining commands are flagged as contract gaps; track additions in the roadmap and extend the suite as they stabilise.
 - When adding new commands, include fixtures or smoke scripts that exercise their happy path, and wire them into `composer test` to keep the freeze enforceable.
 ### `auth.jwt.setup`
@@ -220,6 +220,6 @@ The following sections capture the full contract for every command currently reg
   - Registers `Bamboo\Auth\Jwt\JwtAuthModule` in `etc/modules.php` if it is not already listed.
   - Writes a random 64-character hex secret to `.env` when `AUTH_JWT_SECRET` is missing.
   - Full walkthrough: [JWT Authentication CLI Toolkit](jwt-auth-toolkit.md).
-- **Guardrails:** [`tests/Console/AuthJwtSetupCommandTest.php`](../../tests/Console/AuthJwtSetupCommandTest.php) covers secret generation, module registration, and idempotent user store seeding.
+- **Guardrails:** [`tests/Console/AuthJwtSetupCommandTest.php`](https://github.com/greenarmor/bamboo/blob/main/tests/Console/AuthJwtSetupCommandTest.php) covers secret generation, module registration, and idempotent user store seeding.
 
 ### `cache.purge`

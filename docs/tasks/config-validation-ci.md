@@ -12,7 +12,7 @@ matrix job to keep the validator active.
 - [`docs/roadmap/v1.0-prep.md`](../roadmap/v1.0-prep.md) tracks this under the
   configuration schema checklist. The main checkbox and the "Land the Composer
   script and CI wiring" subtask are now complete.
-- `composer.json` exposes the [`validate:config` script](../../composer.json)
+- `composer.json` exposes the [`validate:config` script](https://github.com/greenarmor/bamboo/blob/main/composer.json)
   and `.github/workflows/ci.yml` runs it alongside the existing Composer QA
   targets.
 - `src/Console/Command/ConfigValidate.php` implements the validator command and
@@ -40,9 +40,9 @@ matrix job to keep the validator active.
 
 ## References
 
-- Composer script definition: [`composer.json`](../../composer.json)
-- CI pipeline: [`.github/workflows/ci.yml`](../../.github/workflows/ci.yml)
-- Command implementation: [`src/Console/Command/ConfigValidate.php`](../../src/Console/Command/ConfigValidate.php)
+- Composer script definition: [`composer.json`](https://github.com/greenarmor/bamboo/blob/main/composer.json)
+- CI pipeline: [`.github/workflows/ci.yml`](https://github.com/greenarmor/bamboo/blob/main/.github/workflows/ci.yml)
+- Command implementation: [`src/Console/Command/ConfigValidate.php`](https://github.com/greenarmor/bamboo/blob/main/src/Console/Command/ConfigValidate.php)
 # Task Stub: Integrate the configuration validator with CI
 
 ## Summary
@@ -57,7 +57,7 @@ matrix job to keep the validator active.
 - [`docs/roadmap/v1.0-prep.md`](../roadmap/v1.0-prep.md) tracks this under the
   configuration schema checklist. The main checkbox and the "Land the Composer
   script and CI wiring" subtask are now complete.
-- `composer.json` exposes the [`validate:config` script](../../composer.json)
+- `composer.json` exposes the [`validate:config` script](https://github.com/greenarmor/bamboo/blob/main/composer.json)
   and `.github/workflows/ci.yml` runs it alongside the existing Composer QA
   targets.
 - `src/Console/Command/ConfigValidate.php` implements the validator command and
@@ -85,6 +85,6 @@ matrix job to keep the validator active.
 
 ## References
 
-- Composer script definition: [`composer.json`](../../composer.json)
-- CI pipeline: [`.github/workflows/ci.yml`](../../.github/workflows/ci.yml)
-- Command implementation: [`src/Console/Command/ConfigValidate.php`](../../src/Console/Command/ConfigValidate.php)
+- Composer script definition: [`composer.json`](https://github.com/greenarmor/bamboo/blob/main/composer.json)
+- CI pipeline: [`.github/workflows/ci.yml`](https://github.com/greenarmor/bamboo/blob/main/.github/workflows/ci.yml)
+- Command implementation: [`src/Console/Command/ConfigValidate.php`](https://github.com/greenarmor/bamboo/blob/main/src/Console/Command/ConfigValidate.php)

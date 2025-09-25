@@ -1,0 +1,58 @@
+site_name: Bamboo Documentation
+site_description: "Guides, references, and roadmaps for the Bamboo microframework"
+site_url: https://bamboo.github.io/
+repo_url: https://github.com/bamboo/bamboo
+repo_name: bamboo/bamboo
+docs_dir: docs
+nav:
+  - Home: index.md
+  - Installation:
+      - PHP 8.2: Install-Bamboo-PHP82.md
+      - PHP 8.3: Install-Bamboo-PHP83.md
+      - PHP 8.4: Install-Bamboo-PHP84.md
+  - Framework Guide:
+      - Modules: modules.md
+      - Router: router.md
+      - Configuration:
+          - Overview: configuration/overview.md
+  - CLI:
+      - Command Reference: cli/README.md
+      - JWT Auth Toolkit: cli/jwt-auth-toolkit.md
+  - Tasks:
+      - Overview: tasks/README.md
+      - Config Validation in CI: tasks/config-validation-ci.md
+      - Benchmarks Baseline Dataset: tasks/benchmarks-baseline-dataset.md
+      - Upgrade Guide Config Deprecations: tasks/upgrade-guide-config-deprecations.md
+  - Benchmarks:
+      - Overview: benchmarks/README.md
+      - Baseline Dataset (2024-05-28): benchmarks/data/20240528-baseline.md
+  - Starters: starters/README.md
+  - Compatibility: OpenSwoole-Compat-and-Fixes.md
+  - Upgrade:
+      - Bamboo v1.0 Upgrade Guide: upgrade/v1.0.md
+  - Roadmap:
+      - v0.3 Prep: roadmap/v0.3-prep.md
+      - v0.4 Prep: roadmap/v0.4-prep.md
+      - v1.0 Prep: roadmap/v1.0-prep.md
+theme:
+  name: material
+  features:
+    - navigation.expand
+    - navigation.indexes
+    - navigation.sections
+plugins:
+  - search
+  - awesome-pages
+  - minify:
+      minify_html: true
+validation:
+  omitted_files: warn
+  absolute_links: ignore
+  unrecognized_links: ignore
+markdown_extensions:
+  - admonition
+  - codehilite
+  - footnotes
+  - pymdownx.superfences
+  - toc:
+      permalink: true

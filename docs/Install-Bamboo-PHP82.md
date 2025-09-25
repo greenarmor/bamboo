@@ -118,7 +118,7 @@ cd bamboo
 composer install
 ```
 
-Composer pulls all runtime dependencies defined in [`composer.json`](../composer.json), such as FastRoute, Nyholm PSR-7, Guzzle, Predis, Illuminate Database, and Monolog.
+Composer pulls all runtime dependencies defined in [`composer.json`](https://github.com/greenarmor/bamboo/blob/main/composer.json), such as FastRoute, Nyholm PSR-7, Guzzle, Predis, Illuminate Database, and Monolog.
 
 ---
 
@@ -146,7 +146,7 @@ Composer pulls all runtime dependencies defined in [`composer.json`](../composer
    ```
    The cache directory stores route caches and other runtime artifacts, while the log directory receives application logs.
 
-4. Understand the configuration files in [`etc/`](../etc):
+4. Understand the configuration files in [`etc/`](https://github.com/greenarmor/bamboo/tree/main/etc):
    - `etc/app.php` reads core app settings (`APP_NAME`, `APP_ENV`, `APP_DEBUG`, `APP_KEY`, `LOG_FILE`).
    - `etc/server.php` maps `.env` values to OpenSwoole server options (workers, task workers, static files).
    - `etc/cache.php` controls where cache artifacts are stored.
@@ -217,6 +217,6 @@ See [`docs/OpenSwoole-Compat-and-Fixes.md`](./OpenSwoole-Compat-and-Fixes.md) fo
 
 - Commit your `.env` overrides to a `.env.local` (or similar) file outside version control.
 - Configure CI/CD runners with the same PHP 8.2 + OpenSwoole toolchain so deployments match local development.
-- Explore the roadmap and CLI capabilities in the [README](../README.md).
+- Explore the roadmap and CLI capabilities in the [README](https://github.com/greenarmor/bamboo/blob/main/README.md).
 
 Bamboo should now be fully operational on PHP 8.2.
