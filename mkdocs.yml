@@ -37,6 +37,15 @@ nav:
       - v1.0 Prep: roadmap/v1.0-prep.md
 theme:
   name: material
+  palette:
+    - scheme: slate
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+    - scheme: default
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
   features:
     - navigation.expand
     - navigation.indexes
