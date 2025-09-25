@@ -8,6 +8,11 @@ const COMPONENT_RENDERERS = {
   footer: renderFooter,
 };
 
+const GSAP_CDN_URL = 'https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js';
+
+let cachedGsap = null;
+let gsapLoaderPromise = null;
+
 export function renderTemplate(root, template) {
   if (!root || !template) {
     return;
@@ -226,22 +231,50 @@ function renderFaq(node) {
   }
 
   const items = Array.isArray(node.items) ? node.items : [];
-  for (const item of items) {
+  const itemsWithContent = items.filter((item) => typeof item === 'object' && item !== null);
+
+  for (const item of itemsWithContent) {
     const article = createElement('article', 'bamboo-faq-item');
 
-    if (typeof item.question === 'string' && item.question !== '') {
-      const question = document.createElement('h3');
-      question.textContent = item.question;
-      article.appendChild(question);
+    const questionText = typeof item.question === 'string' ? item.question : '';
+    const answerText = typeof item.answer === 'string' ? item.answer : '';
+    if (questionText === '' && answerText === '') {
+      continue;
     }
 
-    if (typeof item.answer === 'string' && item.answer !== '') {
-      const answer = document.createElement('p');
-      answer.textContent = item.answer;
-      article.appendChild(answer);
+    if (questionText === '') {
+      continue;
     }
+
+    if (answerText === '') {
+      continue;
+    }
+
+    const questionId = `bamboo-faq-${nextFaqId()}`;
+
+    const questionButton = createElement('button', 'bamboo-faq-question');
+    questionButton.type = 'button';
+    questionButton.id = questionId;
+    questionButton.setAttribute('aria-expanded', 'false');
+    questionButton.textContent = questionText;
+    article.appendChild(questionButton);
+
+    const answer = createElement('div', 'bamboo-faq-answer');
+    answer.id = `${questionId}-panel`;
+    answer.setAttribute('role', 'region');
+    answer.setAttribute('aria-hidden', 'true');
+    questionButton.setAttribute('aria-controls', answer.id);
+
+    const body = document.createElement('p');
+    body.textContent = answerText;
+    answer.appendChild(body);
+    article.appendChild(answer);
 
     section.appendChild(article);
+  }
+
+  if (section.children.length > 0) {
+    initializeFaqAccordion(section);
   }
 
   return section;
@@ -300,4 +333,148 @@ function createElement(tag, className) {
     element.className = className;
   }
   return element;
+}
+
+function nextFaqId() {
+  if (typeof nextFaqId.counter !== 'number') {
+    nextFaqId.counter = 0;
+  }
+  nextFaqId.counter += 1;
+  return nextFaqId.counter;
+}
+
+function initializeFaqAccordion(section) {
+  const items = section.querySelectorAll('.bamboo-faq-item');
+  if (items.length === 0) {
+    return;
+  }
+
+  ensureGsap();
+
+  for (const item of items) {
+    const trigger = item.querySelector('.bamboo-faq-question');
+    const answer = item.querySelector('.bamboo-faq-answer');
+    if (!trigger || !answer) {
+      continue;
+    }
+
+    trigger.addEventListener('click', () => {
+      const expanded = trigger.getAttribute('aria-expanded') === 'true';
+      toggleFaqItem(item, !expanded);
+    });
+
+    toggleFaqItem(item, false, { skipAnimation: true });
+  }
+}
+
+function toggleFaqItem(item, shouldExpand, options = {}) {
+  const trigger = item.querySelector('.bamboo-faq-question');
+  const answer = item.querySelector('.bamboo-faq-answer');
+  if (!trigger || !answer) {
+    return;
+  }
+
+  trigger.setAttribute('aria-expanded', shouldExpand ? 'true' : 'false');
+  answer.setAttribute('aria-hidden', shouldExpand ? 'false' : 'true');
+  item.classList.toggle('is-open', shouldExpand);
+
+  if (options.skipAnimation) {
+    answer.style.height = shouldExpand ? 'auto' : '0px';
+    return;
+  }
+
+  ensureGsap().then((gsapInstance) => {
+    if (!gsapInstance) {
+      answer.style.height = shouldExpand ? 'auto' : '0px';
+      return;
+    }
+
+    gsapInstance.killTweensOf(answer);
+
+    if (shouldExpand) {
+      gsapInstance.set(answer, { height: 'auto' });
+      const targetHeight = answer.getBoundingClientRect().height;
+      gsapInstance.fromTo(
+        answer,
+        { height: 0 },
+        {
+          height: targetHeight,
+          duration: 0.35,
+          ease: 'power2.out',
+          onComplete: () => {
+            answer.style.height = 'auto';
+          },
+        },
+      );
+    } else {
+      const currentHeight = answer.getBoundingClientRect().height;
+      gsapInstance.fromTo(
+        answer,
+        { height: currentHeight },
+        {
+          height: 0,
+          duration: 0.3,
+          ease: 'power2.inOut',
+          onComplete: () => {
+            answer.style.height = '0px';
+          },
+        },
+      );
+    }
+  });
+}
+
+function ensureGsap() {
+  if (cachedGsap) {
+    return Promise.resolve(cachedGsap);
+  }
+
+  if (typeof window !== 'undefined' && window.gsap) {
+    cachedGsap = window.gsap;
+    return Promise.resolve(cachedGsap);
+  }
+
+  if (!gsapLoaderPromise) {
+    gsapLoaderPromise = new Promise((resolve) => {
+      if (typeof document === 'undefined') {
+        resolve(null);
+        return;
+      }
+
+      const existing = document.querySelector(`script[src="${GSAP_CDN_URL}"]`);
+      if (existing) {
+        if (existing.getAttribute('data-gsap-loaded') === 'true' || (typeof window !== 'undefined' && window.gsap)) {
+          cachedGsap = window.gsap || null;
+          resolve(cachedGsap);
+          return;
+        }
+        existing.addEventListener('load', () => {
+          cachedGsap = window.gsap || null;
+          resolve(cachedGsap);
+        });
+        existing.addEventListener('error', () => {
+          gsapLoaderPromise = null;
+          resolve(null);
+        });
+        return;
+      }
+
+      const script = document.createElement('script');
+      script.src = GSAP_CDN_URL;
+      script.async = true;
+      script.onload = () => {
+        cachedGsap = window.gsap || null;
+        script.setAttribute('data-gsap-loaded', 'true');
+        resolve(cachedGsap);
+      };
+      script.onerror = () => {
+        gsapLoaderPromise = null;
+        resolve(null);
+      };
+      script.dataset.gsapprovider = 'bamboo-ui';
+      document.head.appendChild(script);
+    });
+  }
+
+  return gsapLoaderPromise;
 }
