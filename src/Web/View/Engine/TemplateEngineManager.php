@@ -14,7 +14,15 @@ class TemplateEngineManager {
    */
   private array $factories = [];
 
-  public function __construct(private Application $app) {}
+  public function __construct(private Application $app) {
+    $this->extend(
+      'components',
+      /**
+       * @param array<string,mixed> $config
+       */
+      fn (Application $_app, array $config): TemplateEngineInterface => $this->createComponentsDriver($config)
+    );
+  }
 
   public function extend(string $driver, callable $factory): void {
     $this->factories[$driver] = $factory;
