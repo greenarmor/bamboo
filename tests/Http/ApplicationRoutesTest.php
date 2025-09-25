@@ -67,10 +67,12 @@ class ApplicationRoutesTest extends TestCase {
 
     $this->assertIsArray($payload);
     $this->assertArrayHasKey('html', $payload);
+    $this->assertArrayHasKey('template', $payload);
     $this->assertArrayHasKey('meta', $payload);
 
     $html = $payload['html'];
     $this->assertIsString($html);
+    $this->assertStringContainsString('class="bamboo-hero"', $html);
     $this->assertStringContainsString('Bamboo makes high-performance PHP approachable.', $html);
     $this->assertStringContainsString('Powered by OpenSwoole', $html);
     $this->assertStringContainsString('Environment ready', $html);
@@ -78,6 +80,15 @@ class ApplicationRoutesTest extends TestCase {
 
     $expectedSwoole = $this->expectedSwooleVersion();
     $this->assertStringContainsString($expectedSwoole, $html);
+
+    $template = $payload['template'];
+    $this->assertIsArray($template);
+    $this->assertSame(1, $template['version'] ?? null);
+    $this->assertSame('page', $template['component'] ?? null);
+    $this->assertArrayHasKey('children', $template);
+    $this->assertIsArray($template['children']);
+    $this->assertNotEmpty($template['children']);
+    $this->assertSame('hero', $template['children'][0]['component'] ?? null);
 
     $meta = $payload['meta'];
     $this->assertIsArray($meta);

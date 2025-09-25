@@ -16,7 +16,7 @@ class Home {
     $description = $this->escape($payload['meta']['description'] ?? 'Bamboo makes high-performance PHP approachable.');
 
     $loadingMessage = $this->escape(sprintf('Loading %s experience…', $this->app->config('app.name', 'Bamboo')));
-    $errorHtml = '<div class="error-state" role="alert">Unable to load the Bamboo welcome experience. Refresh to try again.</div>';
+    $errorHtml = '<div class="bamboo-error" role="alert">Unable to load the Bamboo welcome experience. Refresh to try again.</div>';
     $encodedErrorHtml = json_encode($errorHtml, JSON_THROW_ON_ERROR);
 
     $html = <<<HTML
@@ -27,315 +27,22 @@ class Home {
     <title>{$title}</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="description" content="{$description}">
-    <style>
-      :root {
-        color-scheme: dark;
-        font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-        line-height: 1.5;
-      }
-
-      * {
-        box-sizing: border-box;
-      }
-
-      body {
-        margin: 0;
-        min-height: 100vh;
-        background: radial-gradient(120% 120% at 50% 0%, rgba(94, 234, 212, 0.18) 0%, rgba(15, 23, 42, 1) 58%), #0f172a;
-        color: #e2e8f0;
-      }
-
-      a {
-        color: inherit;
-      }
-
-      .page {
-        max-width: 1100px;
-        margin: 0 auto;
-        padding: 96px 24px 48px;
-        display: flex;
-        flex-direction: column;
-        gap: 64px;
-      }
-
-      .hero {
-        display: grid;
-        gap: 24px;
-        text-align: center;
-        justify-items: center;
-      }
-
-      .hero h1 {
-        margin: 0;
-        font-size: clamp(2.5rem, 6vw, 3.5rem);
-        font-weight: 700;
-        letter-spacing: -0.03em;
-      }
-
-      .hero p {
-        margin: 0;
-        max-width: 720px;
-        color: #cbd5f5;
-        font-size: 1.1rem;
-      }
-
-      .hero-badges {
-        display: flex;
-        flex-wrap: wrap;
-        justify-content: center;
-        gap: 12px;
-        font-size: 0.85rem;
-        color: #94a3b8;
-      }
-
-      .pill {
-        display: inline-flex;
-        align-items: center;
-        gap: 10px;
-        padding: 8px 18px;
-        border-radius: 999px;
-        border: 1px solid rgba(148, 163, 184, 0.35);
-        background: rgba(15, 23, 42, 0.65);
-        backdrop-filter: blur(6px);
-        letter-spacing: 0.08em;
-      }
-
-      .pill strong {
-        color: #38bdf8;
-        font-weight: 600;
-        text-transform: uppercase;
-        font-size: 0.75rem;
-        letter-spacing: 0.14em;
-      }
-
-      .pill .label {
-        color: #cbd5f5;
-        font-weight: 500;
-        letter-spacing: 0.05em;
-      }
-
-      .hero-actions {
-        display: flex;
-        flex-wrap: wrap;
-        justify-content: center;
-        gap: 14px;
-      }
-
-      .cta {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        gap: 10px;
-        padding: 14px 28px;
-        border-radius: 999px;
-        font-weight: 600;
-        text-decoration: none;
-        transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
-      }
-
-      .cta.primary {
-        background: linear-gradient(135deg, #38bdf8, #10b981);
-        color: #0f172a;
-        box-shadow: 0 12px 32px rgba(56, 189, 248, 0.35);
-      }
-
-      .cta.primary:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 18px 40px rgba(16, 185, 129, 0.45);
-      }
-
-      .cta.secondary {
-        background: rgba(148, 163, 184, 0.18);
-        border: 1px solid rgba(148, 163, 184, 0.35);
-        color: #e2e8f0;
-      }
-
-      .cta.secondary:hover {
-        background: rgba(148, 163, 184, 0.35);
-        transform: translateY(-1px);
-      }
-
-      .grid {
-        display: grid;
-        gap: 24px;
-        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-      }
-
-      .card {
-        background: rgba(15, 23, 42, 0.6);
-        border: 1px solid rgba(148, 163, 184, 0.25);
-        border-radius: 22px;
-        padding: 26px;
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
-        box-shadow: 0 20px 42px rgba(15, 23, 42, 0.45);
-        backdrop-filter: blur(6px);
-      }
-
-      .card span.icon {
-        display: inline-flex;
-        width: 44px;
-        height: 44px;
-        border-radius: 14px;
-        align-items: center;
-        justify-content: center;
-        background: rgba(56, 189, 248, 0.18);
-        color: #38bdf8;
-        font-size: 1.2rem;
-      }
-
-      .card h3 {
-        margin: 0;
-        font-size: 1.25rem;
-        color: #f8fafc;
-      }
-
-      .card p {
-        margin: 0;
-        color: #cbd5f5;
-        font-size: 0.98rem;
-      }
-
-      .stats {
-        display: grid;
-        gap: 18px;
-        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-      }
-
-      .stat {
-        background: rgba(15, 23, 42, 0.68);
-        border: 1px solid rgba(148, 163, 184, 0.3);
-        border-radius: 20px;
-        padding: 18px 22px;
-      }
-
-      .stat dt {
-        font-size: 0.75rem;
-        text-transform: uppercase;
-        letter-spacing: 0.08em;
-        color: #94a3b8;
-      }
-
-      .stat dd {
-        margin: 10px 0 0;
-        font-size: 1.35rem;
-        font-weight: 600;
-        color: #f8fafc;
-      }
-
-      .snippet {
-        position: relative;
-        background: rgba(15, 23, 42, 0.78);
-        border-radius: 26px;
-        padding: 32px;
-        border: 1px solid rgba(56, 189, 248, 0.22);
-        box-shadow: 0 24px 48px rgba(15, 23, 42, 0.5);
-        overflow: hidden;
-      }
-
-      .snippet::before {
-        content: "";
-        position: absolute;
-        inset: -40% 45% 20% -20%;
-        background: radial-gradient(circle, rgba(14, 165, 233, 0.6), transparent 60%);
-        opacity: 0.8;
-        transform: rotate(18deg);
-        pointer-events: none;
-      }
-
-      .snippet pre {
-        margin: 0;
-        font-family: 'Fira Code', 'JetBrains Mono', 'SFMono-Regular', Menlo, monospace;
-        font-size: 0.95rem;
-        color: #a5f3fc;
-        position: relative;
-        z-index: 1;
-        white-space: pre-wrap;
-      }
-
-      .footer {
-        margin-top: auto;
-        text-align: center;
-        font-size: 0.85rem;
-        color: #64748b;
-      }
-
-      .footer a {
-        color: #38bdf8;
-        text-decoration: none;
-      }
-
-      .footer a:hover {
-        text-decoration: underline;
-      }
-
-      .loading-state {
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
-        align-items: center;
-        justify-content: center;
-        min-height: 240px;
-        color: #94a3b8;
-      }
-
-      .loading-state .spinner {
-        width: 44px;
-        height: 44px;
-        border-radius: 999px;
-        border: 3px solid rgba(148, 163, 184, 0.2);
-        border-top-color: #38bdf8;
-        animation: spin 1s linear infinite;
-      }
-
-      .loading-state .label {
-        font-size: 0.95rem;
-        letter-spacing: 0.05em;
-      }
-
-      .error-state {
-        text-align: center;
-        background: rgba(153, 27, 27, 0.12);
-        border: 1px solid rgba(248, 113, 113, 0.35);
-        color: #fecaca;
-        border-radius: 18px;
-        padding: 32px;
-      }
-
-      @keyframes spin {
-        from { transform: rotate(0deg); }
-        to { transform: rotate(360deg); }
-      }
-
-      @media (max-width: 640px) {
-        .page {
-          padding: 72px 18px 36px;
-        }
-
-        .hero h1 {
-          font-size: clamp(2.25rem, 9vw, 3rem);
-        }
-
-        .snippet {
-          padding: 26px;
-        }
-      }
-    </style>
+    <link rel="stylesheet" href="/assets/bamboo-ui.css">
   </head>
   <body>
-    <div id="landing-root" class="page">
-      <div class="loading-state" role="status" aria-live="polite">
-        <span class="spinner" aria-hidden="true"></span>
+    <div id="landing-root" class="bamboo-page">
+      <div class="bamboo-loading" role="status" aria-live="polite">
+        <span class="bamboo-spinner" aria-hidden="true"></span>
         <span class="label">{$loadingMessage}</span>
-     
+      </div>
     </div>
     <noscript>
-      <div class="page">
-        <div class="error-state" role="alert">Enable JavaScript to view the Bamboo landing experience.</div>
+      <div class="bamboo-page">
+        <div class="bamboo-error" role="alert">Enable JavaScript to view the Bamboo landing experience.</div>
       </div>
     </noscript>
     <script type="module">
+      import { renderTemplate } from '/assets/bamboo-ui.js';
       const root = document.getElementById('landing-root');
 
       async function renderLanding() {
@@ -347,7 +54,9 @@ class Home {
 
           const payload = await response.json();
 
-          if (payload && payload.html) {
+          if (payload && payload.template) {
+            renderTemplate(root, payload.template);
+          } else if (payload && payload.html) {
             root.innerHTML = payload.html;
           }
 
