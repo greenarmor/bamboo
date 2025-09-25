@@ -13,6 +13,7 @@ nav:
   - Framework Guide:
       - Modules: modules.md
       - Router: router.md
+      - UI Templating: ui-templating.md
       - Configuration:
           - Overview: configuration/overview.md
   - CLI:
