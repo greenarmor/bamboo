@@ -53,10 +53,22 @@ class ApplicationRoutesTest extends TestCase {
     $body = (string) $response->getBody();
     $this->assertStringContainsString('id="landing-root"', $body);
     $this->assertStringContainsString("fetch('/api/landing'", $body);
+    $this->assertStringContainsString('<meta name="description" content="Bamboo makes high-performance PHP approachable.">', $body);
 
     $loadingMessage = sprintf('Loading %s experience…', $app->config('app.name', 'Bamboo'));
     $this->assertStringContainsString($loadingMessage, html_entity_decode($body, ENT_QUOTES));
     $this->assertStringContainsString('Enable JavaScript to view the Bamboo landing experience.', $body);
+  }
+
+  public function testHomeRouteOutputsArticleMetaTags(): void {
+    $app = $this->createApp();
+    $response = $app->handle(new ServerRequest('GET', '/?type=article'));
+
+    $this->assertSame(200, $response->getStatusCode());
+
+    $body = (string) $response->getBody();
+    $this->assertStringContainsString('<meta name="author" content="Bamboo Editorial Team">', $body);
+    $this->assertStringContainsString('<meta name="publication" content="Green Armor Engineering">', $body);
   }
 
   public function testLandingPageApiProvidesDynamicMarkupPayload(): void {
@@ -101,6 +113,48 @@ class ApplicationRoutesTest extends TestCase {
     );
     $this->assertSame('Bamboo makes high-performance PHP approachable.', $meta['description'] ?? null);
     $this->assertArrayHasKey('generated_at', $meta);
+  }
+
+  public function testLandingPageApiProvidesArticleMetaPayload(): void {
+    $app = $this->createApp();
+    $response = $app->handle(new ServerRequest('GET', '/api/landing?type=article'));
+
+    $this->assertSame(200, $response->getStatusCode());
+
+    $payload = json_decode((string) $response->getBody(), true, flags: JSON_THROW_ON_ERROR);
+    $meta = $payload['meta'] ?? [];
+
+    $this->assertSame('Bamboo Editorial Team', $meta['author'] ?? null);
+    $this->assertSame('Green Armor Engineering', $meta['publication'] ?? null);
+    $this->assertStringContainsString('Async PHP in Production', $meta['title'] ?? '');
+  }
+
+  public function testLandingPageApiProvidesFoodMetaPayload(): void {
+    $app = $this->createApp();
+    $response = $app->handle(new ServerRequest('GET', '/api/landing?type=food'));
+
+    $this->assertSame(200, $response->getStatusCode());
+
+    $payload = json_decode((string) $response->getBody(), true, flags: JSON_THROW_ON_ERROR);
+    $meta = $payload['meta'] ?? [];
+
+    $this->assertSame('Fusion', $meta['cuisine'] ?? null);
+    $this->assertSame('45 minutes', $meta['prep_time'] ?? null);
+    $this->assertSame('Chef Queue Worker', $meta['chef'] ?? null);
+  }
+
+  public function testLandingPageApiProvidesBookMetaPayload(): void {
+    $app = $this->createApp();
+    $response = $app->handle(new ServerRequest('GET', '/api/landing?type=book'));
+
+    $this->assertSame(200, $response->getStatusCode());
+
+    $payload = json_decode((string) $response->getBody(), true, flags: JSON_THROW_ON_ERROR);
+    $meta = $payload['meta'] ?? [];
+
+    $this->assertSame('978-1-955555-01-2', $meta['isbn'] ?? null);
+    $this->assertSame('Green Armor Press', $meta['publisher'] ?? null);
+    $this->assertSame('Jordan Queue', $meta['author'] ?? null);
   }
 
   public function testLandingPageRespectsCustomTemplateEngine(): void {

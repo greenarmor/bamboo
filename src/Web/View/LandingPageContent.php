@@ -10,13 +10,15 @@ class LandingPageContent {
   /**
    * Build the landing page payload consumed by both the API and the shell page.
    *
+   * @param array<string, scalar> $descriptor
+   *
    * @return array{
    *   html: string,
    *   template: array{version:int,component:string,children:list<array<string,mixed>>},
-   *   meta: array{title:string,description:string,generated_at:string}
+   *   meta: array<string, string>
    * }
    */
-  public function payload(): array {
+  public function payload(array $descriptor = []): array {
     $frameworkRaw = (string) $this->app->config('app.name', 'Bamboo');
     $environmentRaw = (string) $this->app->config('app.env', 'local');
     $phpVersionRaw = PHP_VERSION;
@@ -128,18 +130,74 @@ class LandingPageContent {
     $engineName = $this->resolveLandingEngine();
     $html = $this->app->get(TemplateEngineManager::class)->render($template, ['page' => 'landing'], $engineName);
 
-    $metaTitle = sprintf('%s | Modern PHP Microframework', $frameworkRaw !== '' ? $frameworkRaw : 'Bamboo');
-    $metaDescription = 'Bamboo makes high-performance PHP approachable.';
-
     return [
       'html' => $html,
       'template' => $template,
-      'meta' => [
-        'title' => $metaTitle,
-        'description' => $metaDescription,
-        'generated_at' => $generatedAtRaw,
-      ],
+      'meta' => $this->buildMeta($descriptor, $frameworkRaw, $generatedAtRaw),
     ];
+  }
+
+  /**
+   * @param array<string, scalar> $descriptor
+   *
+   * @return array<string, string>
+   */
+  private function buildMeta(array $descriptor, string $frameworkRaw, string $generatedAtRaw): array {
+    $framework = $frameworkRaw !== '' ? $frameworkRaw : 'Bamboo';
+    $typeRaw = $descriptor['type'] ?? null;
+    $type = is_string($typeRaw) && $typeRaw !== '' ? strtolower($typeRaw) : 'framework';
+
+    $defaults = match ($type) {
+      'article' => [
+        'title' => sprintf('%s | Async PHP in Production', $framework),
+        'description' => 'A behind-the-scenes look at shipping Bamboo services at scale.',
+        'author' => 'Bamboo Editorial Team',
+        'publication' => 'Green Armor Engineering',
+      ],
+      'food' => [
+        'title' => sprintf('%s Test Kitchen | Async Ramen', $framework),
+        'description' => 'A comforting bowl that keeps OpenSwoole chefs happy.',
+        'cuisine' => 'Fusion',
+        'prep_time' => '45 minutes',
+        'chef' => 'Chef Queue Worker',
+      ],
+      'book' => [
+        'title' => sprintf('Scaling Services with %s', $framework),
+        'description' => 'A handbook for building resilient PHP microservices on Bamboo.',
+        'isbn' => '978-1-955555-01-2',
+        'publisher' => 'Green Armor Press',
+        'author' => 'Jordan Queue',
+      ],
+      default => [
+        'title' => sprintf('%s | Modern PHP Microframework', $framework),
+        'description' => 'Bamboo makes high-performance PHP approachable.',
+      ],
+    };
+
+    $overrides = [];
+    foreach ($descriptor as $key => $value) {
+      if ($key === 'type') {
+        continue;
+      }
+
+      if (is_scalar($value) && $value !== '') {
+        $overrides[$key] = (string) $value;
+      }
+    }
+
+    $meta = array_merge($defaults, $overrides);
+    $meta['generated_at'] = $generatedAtRaw;
+
+    foreach ($meta as $key => $value) {
+      if (!is_scalar($value)) {
+        unset($meta[$key]);
+        continue;
+      }
+
+      $meta[$key] = (string) $value;
+    }
+
+    return $meta;
   }
 
   private function resolveLandingEngine(): ?string {
