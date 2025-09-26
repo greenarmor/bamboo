@@ -62,6 +62,29 @@ final class LandingMetaCommandTest extends TestCase
         $this->assertStringContainsString('Async PHP in Production', $meta['title'] ?? '');
     }
 
+    public function testAboutTypeOutputsDefaultsAndOverrides(): void
+    {
+        $app = $this->createApplication();
+        $command = new LandingMeta($app);
+
+        ob_start();
+        $exitCode = $command->handle(['about', 'mission=Grow async PHP adoption.']);
+        $output = ob_get_clean();
+
+        if ($output === false) {
+            $output = '';
+        }
+
+        $this->assertSame(0, $exitCode);
+
+        $meta = json_decode(trim($output), true, flags: JSON_THROW_ON_ERROR);
+
+        $this->assertIsArray($meta);
+        $this->assertSame('Grow async PHP adoption.', $meta['mission'] ?? null);
+        $this->assertSame('Jordan Queue', $meta['team_lead'] ?? null);
+        $this->assertStringContainsString('About', $meta['title'] ?? '');
+    }
+
     private function createApplication(): Application
     {
         $config = new Config(dirname(__DIR__, 2) . '/etc');

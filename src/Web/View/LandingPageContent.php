@@ -154,6 +154,12 @@ class LandingPageContent {
         'author' => 'Bamboo Editorial Team',
         'publication' => 'Green Armor Engineering',
       ],
+      'about' => [
+        'title' => sprintf('About %s', $framework),
+        'description' => 'Learn about the mission driving Bamboo and the people behind it.',
+        'mission' => 'Make high-performance PHP approachable for every team.',
+        'team_lead' => 'Jordan Queue',
+      ],
       'food' => [
         'title' => sprintf('%s Test Kitchen | Async Ramen', $framework),
         'description' => 'A comforting bowl that keeps OpenSwoole chefs happy.',

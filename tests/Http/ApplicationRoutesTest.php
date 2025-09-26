@@ -71,6 +71,17 @@ class ApplicationRoutesTest extends TestCase {
     $this->assertStringContainsString('<meta name="publication" content="Green Armor Engineering">', $body);
   }
 
+  public function testHomeRouteOutputsAboutMetaTags(): void {
+    $app = $this->createApp();
+    $response = $app->handle(new ServerRequest('GET', '/?type=about'));
+
+    $this->assertSame(200, $response->getStatusCode());
+
+    $body = (string) $response->getBody();
+    $this->assertStringContainsString('<meta name="mission" content="Make high-performance PHP approachable for every team.">', $body);
+    $this->assertStringContainsString('<meta name="team_lead" content="Jordan Queue">', $body);
+  }
+
   public function testLandingPageApiProvidesDynamicMarkupPayload(): void {
     $app = $this->createApp();
     $response = $app->handle(new ServerRequest('GET', '/api/landing'));
@@ -155,6 +166,20 @@ class ApplicationRoutesTest extends TestCase {
     $this->assertSame('978-1-955555-01-2', $meta['isbn'] ?? null);
     $this->assertSame('Green Armor Press', $meta['publisher'] ?? null);
     $this->assertSame('Jordan Queue', $meta['author'] ?? null);
+  }
+
+  public function testLandingPageApiProvidesAboutMetaPayload(): void {
+    $app = $this->createApp();
+    $response = $app->handle(new ServerRequest('GET', '/api/landing?type=about'));
+
+    $this->assertSame(200, $response->getStatusCode());
+
+    $payload = json_decode((string) $response->getBody(), true, flags: JSON_THROW_ON_ERROR);
+    $meta = $payload['meta'] ?? [];
+
+    $this->assertSame('Make high-performance PHP approachable for every team.', $meta['mission'] ?? null);
+    $this->assertSame('Jordan Queue', $meta['team_lead'] ?? null);
+    $this->assertStringContainsString('About', $meta['title'] ?? '');
   }
 
   public function testLandingPageRespectsCustomTemplateEngine(): void {
