@@ -16,6 +16,7 @@ Bamboo's dot-notation console is the operational entry point for every deploymen
 | `client.call` | Preview | Intended for troubleshooting and lacks retry/back-off knobs. Marked preview until the ergonomics settle. | _Contract gap – add coverage in a future cycle._ |
 | `dev.watch` | Preview | Development helper that may add flags as the workflow evolves. | [`tests/Console/DevWatchTest.php`](https://github.com/greenarmor/bamboo/blob/main/tests/Console/DevWatchTest.php) |
 | `http.serve` | Stable | Entry point for OpenSwoole HTTP hosts. Behaviour is locked for v1.x. | [`tests/Console/HttpServeCommandTest.php`](https://github.com/greenarmor/bamboo/blob/main/tests/Console/HttpServeCommandTest.php) |
+| `landing.meta` | Preview | Dumps landing page metadata for inspection or seeding CMS fixtures. | [`tests/Console/LandingMetaCommandTest.php`](https://github.com/greenarmor/bamboo/blob/main/tests/Console/LandingMetaCommandTest.php) |
 | `pkg.info` | Internal | Diagnostics command that scrapes Composer metadata. Not covered by semver guarantees. | _Internal-only – explicitly excluded from contract tests._ |
 | `queue.work` | Stable | Runs background workers and honours deployment-critical flags. | [`tests/Console/QueueWorkCommandTest.php`](https://github.com/greenarmor/bamboo/blob/main/tests/Console/QueueWorkCommandTest.php) |
 | `routes.cache` | Stable | Required for warm boots in production. | _Contract gap – add coverage in a future cycle._ |
@@ -112,6 +113,22 @@ The following sections capture the full contract for every command currently reg
 - **Side effects:**
   - Starts the async server loop; records instrumentation via `Bamboo\Swoole\ServerInstrumentation` and toggles readiness probes exposed by `Bamboo\Web\Health\HealthState`.
 - **Guardrails:** [`tests/Console/HttpServeCommandTest.php`](https://github.com/greenarmor/bamboo/blob/main/tests/Console/HttpServeCommandTest.php) verifies the boot banner, instrumentation hooks, and environment flag handling.
+
+### `landing.meta`
+
+- **Purpose:** Render the structured metadata payload that powers the landing page and JSON API.
+- **Inputs:**
+  - Optional first argument sets the descriptor `type` (for example: `framework`, `article`, `food`, `book`, or `about`).
+  - Additional `key=value` pairs override descriptor attributes. They can be provided either via CLI arguments or the `landing.content` configuration block.
+- **Outputs & exit codes:**
+  - Prints a JSON document containing the merged metadata defaults (including timestamps) on success (exit code `0`).
+  - Emits `No metadata available.` when the descriptor resolves to an empty payload (exit code `0`).
+  - Returns exit code `1` if metadata encoding fails.
+- **Side effects:**
+  - Read-only. Useful for seeding CMS fixtures or verifying API responses during development.
+- **Guardrails:** [`tests/Console/LandingMetaCommandTest.php`](https://github.com/greenarmor/bamboo/blob/main/tests/Console/LandingMetaCommandTest.php) asserts descriptor parsing, default payloads (including the `about` mission), and override behaviour.
+- **Usage example:**
+  - `php bin/bamboo landing.meta about mission="Prototype async PHP workflows"`
 
 ### `pkg.info`
 
