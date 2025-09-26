@@ -6,10 +6,11 @@
 /pint.json export-ignore
 /phpcs.xml export-ignore
 /.editorconfig export-ignore
-/.env.example export-ignore
 /tests export-ignore
 /docs export-ignore
 /var/cache export-ignore
+/mkdocs.yml export-ignore
 /var/log export-ignore
+/site export-ignore
 /README.md export-ignore
 /LICENSE export-ignore
