@@ -23,9 +23,9 @@ class LandingPageContent {
     $swooleVersionRaw = $this->resolveSwooleVersion();
     $generatedAtRaw = date('F j, Y g:i A T');
 
-    $docsUrl = 'https://github.com/greenarmor/bamboo';
+    $docsUrl = 'https://greenarmor.github.io/bamboo/';
     $startersUrl = 'https://github.com/greenarmor/bamboo/tree/main/docs/starters';
-
+    $fundingUrl = 'https://www.buymeacoffee.com/greenarmor';
     $template = [
       'version' => 1,
       'component' => 'page',
@@ -115,7 +115,9 @@ class LandingPageContent {
         [
           'component' => 'footer',
           'content' => [
-            ['type' => 'text', 'value' => 'Crafted with ❤️ for asynchronous PHP. Contribute on '],
+            ['type' => 'text', 'value' => 'upport the project via '],
+            ['type' => 'link', 'label' => 'Buy Me a Coffee', 'href' => $fundingUrl, 'external' => true],
+            ['type' => 'text', 'value' => ' and help build Bamboo on '],
             ['type' => 'link', 'label' => 'GitHub', 'href' => $docsUrl, 'external' => true],
             ['type' => 'text', 'value' => '.'],
           ],
