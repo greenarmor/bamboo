@@ -2,13 +2,31 @@
 
 use Bamboo\Swoole\ServerInstrumentation;
 use Bamboo\Web\Health\HealthState;
+use OpenSwoole\Exception as OpenSwooleException;
 
 $app = require __DIR__ . '/app.php';
 $health = $app->has(HealthState::class) ? $app->get(HealthState::class) : null;
 
 $host = $app->config('server.host');
 $port = (int)$app->config('server.port');
-$server = new OpenSwoole\HTTP\Server($host, $port);
+$server = null;
+
+try {
+  $server = new OpenSwoole\HTTP\Server($host, $port);
+} catch (Throwable $e) {
+  $message = $e->getMessage();
+
+  if ($e instanceof OpenSwooleException && str_contains(strtolower($message), 'address already in use')) {
+    $message = 'Address already in use.';
+  } else {
+    $message = sprintf('Failed to bind to %s:%s. %s', $host, $port, $message);
+  }
+
+  fwrite(STDERR, $message . PHP_EOL . 'Stack trace:' . PHP_EOL . $e->getTraceAsString() . PHP_EOL);
+  exit(1);
+}
+
+/** @var OpenSwoole\HTTP\Server $server */
 ServerInstrumentation::record($server, $host, $port);
 
 $server->set([
