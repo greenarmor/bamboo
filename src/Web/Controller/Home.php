@@ -5,6 +5,7 @@ use Nyholm\Psr7\Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Bamboo\Core\Application;
 use Bamboo\Web\View\LandingPageContent;
+use Bamboo\Web\View\LandingShellRenderer;
 class Home {
   public function __construct(protected Application $app) {}
 
@@ -19,79 +20,13 @@ class Home {
     $errorHtml = '<div class="bamboo-error" role="alert">Unable to load the Bamboo welcome experience. Refresh to try again.</div>';
     $encodedErrorHtml = json_encode($errorHtml, JSON_THROW_ON_ERROR);
 
-    $html = <<<HTML
-<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8">
-    <title>{$title}</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-{$metaTags}
-    <link rel="stylesheet" href="/assets/bamboo-ui.css">
-  </head>
-  <body>
-    <div id="landing-root" class="bamboo-page">
-      <div class="bamboo-loading" role="status" aria-live="polite">
-        <span class="bamboo-spinner" aria-hidden="true"></span>
-        <span class="label">{$loadingMessage}</span>
-      </div>
-    </div>
-    <noscript>
-      <div class="bamboo-page">
-        <div class="bamboo-error" role="alert">Enable JavaScript to view the Bamboo landing experience.</div>
-      </div>
-    </noscript>
-    <script type="module">
-      import { renderTemplate } from '/assets/bamboo-ui.js';
-      const root = document.getElementById('landing-root');
-
-      async function renderLanding() {
-        try {
-          const response = await fetch('/api/landing', { headers: { 'Accept': 'application/json' } });
-          if (!response.ok) {
-            throw new Error('Failed with status ' + response.status);
-          }
-
-          const payload = await response.json();
-
-          if (payload && payload.template) {
-            renderTemplate(root, payload.template);
-          } else if (payload && payload.html) {
-            root.innerHTML = payload.html;
-          }
-
-          if (payload && payload.meta) {
-            if (payload.meta.title) {
-              document.title = payload.meta.title;
-            }
-
-            for (const [name, value] of Object.entries(payload.meta)) {
-              if (!value || name === 'title') {
-                continue;
-              }
-
-              const selector = 'meta[name="' + String(name).replace(/"/g, '\\"') + '"]';
-              let tag = document.head.querySelector(selector);
-              if (!tag) {
-                tag = document.createElement('meta');
-                tag.setAttribute('name', name);
-                document.head.appendChild(tag);
-              }
-
-              tag.setAttribute('content', String(value));
-            }
-          }
-        } catch (error) {
-          root.innerHTML = {$encodedErrorHtml};
-          console.error('Failed to load landing page payload', error);
-        }
-      }
-
-      renderLanding();
-    </script>
-  </body>
-</html>
-HTML;
+    $renderer = new LandingShellRenderer();
+    $html = $renderer->render([
+      'title' => $title,
+      'metaTags' => $metaTags,
+      'loadingMessage' => $loadingMessage,
+      'encodedErrorHtml' => $encodedErrorHtml,
+    ]);
 
     return new Response(200, ['Content-Type' => 'text/html; charset=utf-8'], $html);
   }
