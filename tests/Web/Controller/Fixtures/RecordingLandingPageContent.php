@@ -6,7 +6,15 @@ use Bamboo\Web\View\LandingPageContent;
 
 final class RecordingLandingPageContent extends LandingPageContent {
   /**
-   * @var array{html:string, template:array<string,mixed>|array, meta:array<string,string>}
+   * @var array{
+   *   html: string,
+   *   template: array{
+   *     version: int,
+   *     component: string,
+   *     children: list<array<string, mixed>>
+   *   },
+   *   meta: array<string, string>
+   * }
    */
   private array $payload;
 
@@ -16,7 +24,15 @@ final class RecordingLandingPageContent extends LandingPageContent {
   public array $lastDescriptor = [];
 
   /**
-   * @param array{html:string, template:array<string,mixed>|array, meta:array<string,string>} $payload
+   * @param array{
+   *   html: string,
+   *   template: array{
+   *     version: int,
+   *     component: string,
+   *     children: list<array<string, mixed>>
+   *   },
+   *   meta: array<string, string>
+   * } $payload
    */
   public function __construct(Application $app, array $payload) {
     parent::__construct($app);
@@ -26,7 +42,15 @@ final class RecordingLandingPageContent extends LandingPageContent {
   /**
    * @param array<string, scalar> $descriptor
    *
-   * @return array{html:string, template:array<string,mixed>|array, meta:array<string,string>}
+   * @return array{
+   *   html: string,
+   *   template: array{
+   *     version: int,
+   *     component: string,
+   *     children: list<array<string, mixed>>
+   *   },
+   *   meta: array<string, string>
+   * }
    */
   public function payload(array $descriptor = []): array {
     $this->lastDescriptor = $descriptor;
