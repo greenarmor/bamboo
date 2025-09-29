@@ -117,7 +117,7 @@ class LandingPageContent {
         [
           'component' => 'footer',
           'content' => [
-            ['type' => 'text', 'value' => 'upport the project via '],
+            ['type' => 'text', 'value' => 'Support the project via '],
             ['type' => 'link', 'label' => 'Buy Me a Coffee', 'href' => $fundingUrl, 'external' => true],
             ['type' => 'text', 'value' => ' and help build Bamboo on '],
             ['type' => 'link', 'label' => 'GitHub', 'href' => $docsUrl, 'external' => true],
