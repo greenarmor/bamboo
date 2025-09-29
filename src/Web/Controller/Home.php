@@ -4,14 +4,24 @@ namespace Bamboo\Web\Controller;
 use Nyholm\Psr7\Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Bamboo\Core\Application;
+use Bamboo\Web\View\LandingDescriptorResolver;
 use Bamboo\Web\View\LandingPageContent;
 use Bamboo\Web\View\LandingShellRenderer;
 class Home {
-  public function __construct(protected Application $app) {}
+  private LandingDescriptorResolver $descriptorResolver;
+  private LandingPageContent $contentBuilder;
+
+  public function __construct(
+    protected Application $app,
+    ?LandingDescriptorResolver $descriptorResolver = null,
+    ?LandingPageContent $contentBuilder = null,
+  ) {
+    $this->descriptorResolver = $descriptorResolver ?? new LandingDescriptorResolver($this->app);
+    $this->contentBuilder = $contentBuilder ?? new LandingPageContent($this->app);
+  }
 
   public function index(Request $request): Response {
-    $contentBuilder = new LandingPageContent($this->app);
-    $payload = $contentBuilder->payload($this->resolveDescriptor($request));
+    $payload = $this->contentBuilder->payload($this->descriptorResolver->resolve($request));
 
     $title = $this->escape($payload['meta']['title'] ?? 'Bamboo | Modern PHP Microframework');
     $metaTags = $this->buildMetaTags($payload['meta'] ?? []);
@@ -62,42 +72,4 @@ class Home {
     return implode("\n", $tags) . "\n";
   }
 
-  /**
-   * @return array<string, scalar>
-   */
-  private function resolveDescriptor(Request $request): array {
-    $descriptor = [];
-
-    foreach ($request->getQueryParams() as $key => $value) {
-      if (is_string($key) && is_scalar($value) && $value !== '') {
-        $descriptor[$key] = is_string($value) ? $value : (string) $value;
-      }
-    }
-
-    if (isset($descriptor['type']) && is_string($descriptor['type'])) {
-      $descriptor['type'] = strtolower($descriptor['type']);
-    }
-
-    if ($descriptor !== []) {
-      return $descriptor;
-    }
-
-    $configured = $this->app->config('landing.content');
-    if (is_array($configured)) {
-      $clean = [];
-      foreach ($configured as $key => $value) {
-        if (is_scalar($value) && $value !== '') {
-          $clean[(string) $key] = (string) $value;
-        }
-      }
-
-      if (isset($clean['type'])) {
-        $clean['type'] = strtolower($clean['type']);
-      }
-
-      return $clean;
-    }
-
-    return [];
-  }
 }
