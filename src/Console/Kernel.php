@@ -3,7 +3,7 @@ namespace Bamboo\Console;
 use Bamboo\Console\Command\{
   HttpServe, RoutesShow, RoutesCache, CachePurge, AppKeyMake,
   QueueWork, WsServe, DevWatch, ScheduleRun, PkgInfo, ClientCall,
-  ConfigValidate, AuthJwtSetup, LandingMeta
+  ConfigValidate, AuthJwtSetup, LandingMeta, DatabaseSetup
 };
 
 class Kernel {
@@ -11,7 +11,7 @@ class Kernel {
     HttpServe::class, RoutesShow::class, RoutesCache::class, CachePurge::class,
     AppKeyMake::class, QueueWork::class, WsServe::class, DevWatch::class, ScheduleRun::class,
     PkgInfo::class, ClientCall::class, ConfigValidate::class, AuthJwtSetup::class,
-    LandingMeta::class
+    LandingMeta::class, DatabaseSetup::class
   ];
   public function __construct(protected \Bamboo\Core\Application $app) {}
   public function run(array $argv): int {

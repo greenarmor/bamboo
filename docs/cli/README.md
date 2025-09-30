@@ -14,6 +14,7 @@ Bamboo's dot-notation console is the operational entry point for every deploymen
 | `auth.jwt.setup` | Preview | Publishes JWT auth config, seeds a default user store, and registers the module. | [`tests/Console/AuthJwtSetupCommandTest.php`](https://github.com/greenarmor/bamboo/blob/main/tests/Console/AuthJwtSetupCommandTest.php) |
 | `cache.purge` | Stable | Clears framework caches without touching user data. Safe for automated rollouts. | _Contract gap – add coverage in a future cycle._ |
 | `client.call` | Preview | Intended for troubleshooting and lacks retry/back-off knobs. Marked preview until the ergonomics settle. | _Contract gap – add coverage in a future cycle._ |
+| `database.setup` | Preview | Interactive wizard for configuring database connections, schemas, and seed data. | [`tests/Console/DatabaseSetupCommandTest.php`](https://github.com/greenarmor/bamboo/blob/main/tests/Console/DatabaseSetupCommandTest.php) |
 | `dev.watch` | Preview | Development helper that may add flags as the workflow evolves. | [`tests/Console/DevWatchTest.php`](https://github.com/greenarmor/bamboo/blob/main/tests/Console/DevWatchTest.php) |
 | `http.serve` | Stable | Entry point for OpenSwoole HTTP hosts. Behaviour is locked for v1.x. | [`tests/Console/HttpServeCommandTest.php`](https://github.com/greenarmor/bamboo/blob/main/tests/Console/HttpServeCommandTest.php) |
 | `landing.meta` | Preview | Dumps landing page metadata for inspection or seeding CMS fixtures. | [`tests/Console/LandingMetaCommandTest.php`](https://github.com/greenarmor/bamboo/blob/main/tests/Console/LandingMetaCommandTest.php) |
@@ -83,6 +84,19 @@ The following sections capture the full contract for every command currently reg
 - **Side effects:**
   - Issues a network request; does not mutate application state.
 - **Guardrails:** No automated contract tests yet. Add curl-style fixtures to assert status line formatting before promoting out of Preview.
+
+### `database.setup`
+
+- **Purpose:** Guide developers through configuring database connections, defining tables, and seeding starter data without hand-editing configuration files.
+- **Inputs:**
+  - Interactive prompts request the database driver (`mysql`, `pgsql`, or `sqlite`), connection details (host, port, database, username, password, or SQLite path), and optionally loop through table definitions.
+  - For each table, the wizard collects column names, basic column types (increments, integer, bigInteger, string, text, boolean, timestamp), nullability, default values, and seed rows. Yes/no prompts control whether additional tables or rows are added.
+- **Outputs & exit codes:**
+  - Prints a banner, echoes configuration progress, and reports when tables are created or skipped. Returns `0` on success. Returns `1` when the project root cannot be found or when connectivity checks against the selected database fail.
+- **Side effects:**
+  - Updates `.env` with the selected `DB_*` values, rewrites `etc/database.php` to match the chosen connection, ensures SQLite directories exist, verifies connectivity using `Illuminate\Database\Capsule\Manager`, creates new tables, and seeds rows only when the target table is empty.
+- **Guardrails:** [`tests/Console/DatabaseSetupCommandTest.php`](https://github.com/greenarmor/bamboo/blob/main/tests/Console/DatabaseSetupCommandTest.php) exercises configuration persistence, schema creation, seed insertion, and idempotent re-runs.
+- **Usage example:** Run `php bin/bamboo database.setup` and follow the prompts to provision a development database.
 
 ### `dev.watch`
 
