@@ -109,9 +109,9 @@ final class DatabaseSetup extends Command
     }
 
     /**
-     * @return array{connectionName: string, connection: array<string, mixed>, env: array<string, string>}|null
+     * @return array{connectionName: string, connection: array<string, mixed>, env: array<string, string>}
      */
-    private function collectConnectionConfiguration(): ?array
+    private function collectConnectionConfiguration(): array
     {
         $env = $this->readEnvFile();
         $driverDefault = strtolower($env['DB_CONNECTION'] ?? 'sqlite');
