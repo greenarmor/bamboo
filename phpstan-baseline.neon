@@ -101,36 +101,6 @@ parameters:
 			path: src/Console/Command/PkgInfo.php
 
 
-		-
-			message: "#^Call to an undefined method object\\:\\:description\\(\\)\\.$#"
-			count: 1
-			path: src/Console/Kernel.php
-
-		-
-			message: "#^Call to an undefined method object\\:\\:handle\\(\\)\\.$#"
-			count: 1
-			path: src/Console/Kernel.php
-
-		-
-			message: "#^Call to an undefined method object\\:\\:matches\\(\\)\\.$#"
-			count: 1
-			path: src/Console/Kernel.php
-
-		-
-			message: "#^Call to an undefined method object\\:\\:name\\(\\)\\.$#"
-			count: 1
-			path: src/Console/Kernel.php
-
-		-
-			message: "#^Method Bamboo\\\\Console\\\\Kernel\\:\\:run\\(\\) has parameter \\$argv with no value type specified in iterable type array\\.$#"
-			count: 1
-			path: src/Console/Kernel.php
-
-		-
-			message: "#^Property Bamboo\\\\Console\\\\Kernel\\:\\:\\$commands type has no value type specified in iterable type array\\.$#"
-			count: 1
-			path: src/Console/Kernel.php
-
 
 		-
 			message: "#^Property Bamboo\\\\Core\\\\Container\\:\\:\\$bindings type has no value type specified in iterable type array\\.$#"

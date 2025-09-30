@@ -6,7 +6,12 @@ use Bamboo\Console\Command\{
   ConfigValidate, AuthJwtSetup, LandingMeta, DatabaseSetup
 };
 
+use Bamboo\Console\Command\Command;
+
 class Kernel {
+  /**
+   * @var list<class-string<Command>>
+   */
   protected array $commands = [
     HttpServe::class, RoutesShow::class, RoutesCache::class, CachePurge::class,
     AppKeyMake::class, QueueWork::class, WsServe::class, DevWatch::class, ScheduleRun::class,
@@ -15,12 +20,15 @@ class Kernel {
   ];
 
   /**
-   * @var list<\Bamboo\Console\Command\Command>|null
+   * @var list<Command>|null
    */
   private ?array $resolvedCommands = null;
 
   public function __construct(protected \Bamboo\Core\Application $app) {}
 
+  /**
+   * @param list<string> $argv
+   */
   public function run(array $argv): int {
     $args = array_slice($argv, 1);
     if ($args === []) {
@@ -84,17 +92,20 @@ class Kernel {
   }
 
   /**
-   * @return list<\Bamboo\Console\Command\Command>
+   * @return list<Command>
    */
   private function instances(): array {
     if ($this->resolvedCommands === null) {
-      $this->resolvedCommands = array_map(fn(string $class) => new $class($this->app), $this->commands);
+      $this->resolvedCommands = array_map(
+        fn(string $class): Command => new $class($this->app),
+        $this->commands,
+      );
     }
 
     return $this->resolvedCommands;
   }
 
-  private function findCommand(string $name): ?\Bamboo\Console\Command\Command {
+  private function findCommand(string $name): ?Command {
     foreach ($this->instances() as $command) {
       if ($command->matches($name)) {
         return $command;
