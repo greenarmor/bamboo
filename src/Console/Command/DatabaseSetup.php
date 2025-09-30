@@ -124,6 +124,14 @@ final class DatabaseSetup extends Command
             $relativePath = $this->prompt('SQLite database path (relative paths live in project root)', $defaultPath);
             $absolutePath = $this->toAbsolutePath($relativePath);
             $this->ensureDirectory(dirname($absolutePath));
+            if (!file_exists($absolutePath)) {
+                $handle = @fopen($absolutePath, 'c');
+                if ($handle === false) {
+                    throw new RuntimeException(sprintf('Unable to create SQLite database file: %s', $absolutePath));
+                }
+
+                fclose($handle);
+            }
 
             $connection = [
                 'driver' => 'sqlite',
