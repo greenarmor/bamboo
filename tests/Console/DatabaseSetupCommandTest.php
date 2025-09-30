@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Tests\Console;
 
 use Bamboo\Console\Command\DatabaseSetup;
+use Bamboo\Console\DatabaseSetup\Driver\DriverInterface;
+use Bamboo\Console\DatabaseSetup\DriverRegistry;
 use Illuminate\Database\Capsule\Manager as Capsule;
 use PHPUnit\Framework\TestCase;
 use Tests\Support\RouterTestApplication;
@@ -119,6 +121,72 @@ final class DatabaseSetupCommandTest extends TestCase
         rewind($outputSecond);
         $secondOutput = stream_get_contents($outputSecond) ?: '';
         $this->assertStringContainsString('Table "posts" already exists; skipping.', $secondOutput);
+    }
+
+    public function testBootConnectionDelegatesToDriverStrategy(): void
+    {
+        $app = new RouterTestApplication();
+        $driver = new class implements DriverInterface {
+            public bool $configured = false;
+
+            public bool $verified = false;
+
+            public function name(): string
+            {
+                return 'fake';
+            }
+
+            public function description(): string
+            {
+                return 'Fake driver for testing';
+            }
+
+            public function supportsSchemaProvisioning(): bool
+            {
+                return false;
+            }
+
+            public function configure(DatabaseSetup $command, array $env): array
+            {
+                $this->configured = true;
+
+                return [
+                    'connectionName' => 'fake',
+                    'connection' => ['driver' => 'fake'],
+                    'env' => ['DB_CONNECTION' => 'fake'],
+                ];
+            }
+
+            public function verifyConnection(array $connection)
+            {
+                $this->verified = true;
+
+                return (object) ['ok' => true];
+            }
+        };
+
+        $registry = new DriverRegistry([$driver]);
+
+        $input = $this->inputStream(['']);
+        $output = fopen('php://memory', 'w+');
+        $stderr = fopen('php://memory', 'w+');
+        if ($output === false || $stderr === false) {
+            $this->fail('Unable to create IO streams.');
+        }
+
+        $command = new DatabaseSetup($app, $this->root, $input, $output, $stderr, $registry);
+
+        $exitCode = $command->handle([]);
+        $this->assertSame(0, $exitCode);
+        $this->assertTrue($driver->configured);
+        $this->assertTrue($driver->verified);
+
+        $configPath = $this->root . '/etc/database.php';
+        $this->assertFileExists($configPath);
+        $config = require $configPath;
+        $this->assertIsArray($config);
+        $this->assertSame('fake', $config['default']);
+        $this->assertArrayHasKey('fake', $config['connections']);
     }
 
     /**

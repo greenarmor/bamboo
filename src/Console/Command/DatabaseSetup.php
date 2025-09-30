@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Bamboo\Console\Command;
 
+use Bamboo\Console\DatabaseSetup\Driver\DriverInterface;
+use Bamboo\Console\DatabaseSetup\DriverRegistry;
 use Bamboo\Core\Application;
 use Illuminate\Database\Capsule\Manager as Capsule;
 use Illuminate\Database\Schema\Blueprint;
@@ -13,6 +15,8 @@ use RuntimeException;
 final class DatabaseSetup extends Command
 {
     private string $projectRoot;
+
+    private DriverRegistry $driverRegistry;
 
     /** @var resource */
     private $stdin;
@@ -33,7 +37,8 @@ final class DatabaseSetup extends Command
         ?string $projectRoot = null,
         $stdin = null,
         $stdout = null,
-        $stderr = null
+        $stderr = null,
+        ?DriverRegistry $driverRegistry = null
     ) {
         parent::__construct($app);
 
@@ -53,6 +58,7 @@ final class DatabaseSetup extends Command
         $this->stdin = $stdin ?? STDIN;
         $this->stdout = $stdout ?? STDOUT;
         $this->stderr = $stderr ?? STDERR;
+        $this->driverRegistry = $driverRegistry ?? DriverRegistry::default();
     }
 
     public function name(): string
@@ -81,12 +87,13 @@ final class DatabaseSetup extends Command
         $this->writeln($this->stdout, '');
 
         $connectionData = $this->collectConnectionConfiguration();
+        $driver = $connectionData['driver'];
 
         $this->writeEnv($connectionData['env']);
         $this->writeDatabaseConfig($connectionData['connectionName'], $connectionData['connection']);
 
         try {
-            $capsule = $this->bootConnection($connectionData['connection']);
+            $connectionHandle = $this->bootConnection($driver, $connectionData['connection']);
         } catch (RuntimeException $exception) {
             $this->writeln($this->stderr, $exception->getMessage());
 
@@ -94,10 +101,17 @@ final class DatabaseSetup extends Command
         }
 
         $this->writeln($this->stdout, 'Connection verified.');
+        $capsule = $connectionHandle instanceof Capsule ? $connectionHandle : null;
 
-        $tables = $this->collectTableDefinitions($capsule);
-        if ($tables !== []) {
-            $this->provisionTables($capsule, $tables);
+        if ($driver->supportsSchemaProvisioning() && !$connectionHandle instanceof Capsule) {
+            throw new RuntimeException(sprintf('Driver "%s" must return a database capsule instance for schema operations.', $driver->name()));
+        }
+
+        if ($capsule instanceof Capsule) {
+            $tables = $this->collectTableDefinitions($capsule);
+            if ($tables !== []) {
+                $this->provisionTables($capsule, $tables);
+            }
         }
 
         $this->writeln($this->stdout, 'Database setup complete.');
@@ -106,113 +120,43 @@ final class DatabaseSetup extends Command
     }
 
     /**
-     * @return array{connectionName: string, connection: array<string, mixed>, env: array<string, string>}
+     * @return array{driver: DriverInterface, connectionName: string, connection: array<string, mixed>, env: array<string, string>}
      */
     private function collectConnectionConfiguration(): array
     {
         $env = $this->readEnvFile();
+        $drivers = $this->driverRegistry->all();
+        $driverNames = array_map(static fn (DriverInterface $driver): string => $driver->name(), $drivers);
+
         $driverDefault = strtolower($env['DB_CONNECTION'] ?? 'sqlite');
-
-        $driver = $this->promptChoice(
-            'Select database driver (mysql/pgsql/sqlite)',
-            ['mysql', 'pgsql', 'sqlite'],
-            $driverDefault
-        );
-
-        if ($driver === 'sqlite') {
-            $defaultPath = $env['DB_DATABASE'] ?? 'var/database/database.sqlite';
-            $relativePath = $this->prompt('SQLite database path (relative paths live in project root)', $defaultPath);
-            $absolutePath = $this->toAbsolutePath($relativePath);
-            $this->ensureDirectory(dirname($absolutePath));
-            if (!file_exists($absolutePath)) {
-                $handle = @fopen($absolutePath, 'c');
-                if ($handle === false) {
-                    throw new RuntimeException(sprintf('Unable to create SQLite database file: %s', $absolutePath));
-                }
-
-                fclose($handle);
-            }
-
-            $connection = [
-                'driver' => 'sqlite',
-                'database' => $absolutePath,
-                'prefix' => '',
-                'foreign_key_constraints' => true,
-            ];
-
-            return [
-                'connectionName' => 'sqlite',
-                'connection' => $connection,
-                'env' => [
-                    'DB_CONNECTION' => 'sqlite',
-                    'DB_DATABASE' => $relativePath,
-                    'DB_HOST' => '',
-                    'DB_PORT' => '',
-                    'DB_USERNAME' => '',
-                    'DB_PASSWORD' => '',
-                ],
-            ];
+        if (!in_array($driverDefault, $driverNames, true)) {
+            $driverDefault = $driverNames[0];
         }
 
-        $hostDefault = $env['DB_HOST'] ?? '127.0.0.1';
-        $portDefault = $env['DB_PORT'] ?? ($driver === 'mysql' ? '3306' : '5432');
-        $databaseDefault = $env['DB_DATABASE'] ?? 'bamboo';
-        $usernameDefault = $env['DB_USERNAME'] ?? 'root';
-        $passwordDefault = $env['DB_PASSWORD'] ?? '';
+        $label = sprintf('Select database driver (%s)', implode('/', $driverNames));
+        $driverName = $this->promptChoice($label, $driverNames, $driverDefault);
+        $driver = $this->driverRegistry->get($driverName);
 
-        $host = $this->prompt('Database host', $hostDefault);
-        $port = $this->prompt('Database port', $portDefault);
-        $database = $this->prompt('Database name', $databaseDefault);
-        $username = $this->prompt('Database username', $usernameDefault);
-        $password = $this->prompt('Database password (input hidden not supported)', $passwordDefault, true);
+        $configuration = $driver->configure($this, $env);
 
-        $connection = [
-            'driver' => $driver,
-            'host' => $host,
-            'port' => $port,
-            'database' => $database,
-            'username' => $username,
-            'password' => $password,
-        ];
-
-        if ($driver === 'mysql') {
-            $connection['charset'] = 'utf8mb4';
-            $connection['collation'] = 'utf8mb4_unicode_ci';
-        } elseif ($driver === 'pgsql') {
-            $connection['charset'] = 'utf8';
-            $connection['prefix'] = '';
-            $connection['schema'] = 'public';
-        }
-
-        return [
-            'connectionName' => $driver,
-            'connection' => $connection,
-            'env' => [
-                'DB_CONNECTION' => $driver,
-                'DB_HOST' => $host,
-                'DB_PORT' => $port,
-                'DB_DATABASE' => $database,
-                'DB_USERNAME' => $username,
-                'DB_PASSWORD' => $password,
-            ],
-        ];
+        return $configuration + ['driver' => $driver];
     }
 
     /**
      * @param array<string, mixed> $connection
+     * @return mixed
      */
-    private function bootConnection(array $connection): Capsule
+    private function bootConnection(DriverInterface $driver, array $connection)
     {
-        $capsule = new Capsule();
-        $capsule->addConnection($connection);
-
         try {
-            $capsule->getConnection()->getPdo();
+            return $driver->verifyConnection($connection);
         } catch (\Throwable $exception) {
-            throw new RuntimeException('Unable to connect to the database: ' . $exception->getMessage(), 0, $exception);
+            throw new RuntimeException(
+                sprintf('Unable to connect using the "%s" driver: %s', $driver->name(), $exception->getMessage()),
+                0,
+                $exception
+            );
         }
-
-        return $capsule;
     }
 
     /**
@@ -509,7 +453,7 @@ final class DatabaseSetup extends Command
     /**
      * @param list<string> $choices
      */
-    private function promptChoice(string $label, array $choices, string $default): string
+    public function promptChoice(string $label, array $choices, string $default): string
     {
         $lowerChoices = array_map('strtolower', $choices);
         $default = strtolower($default);
@@ -540,7 +484,7 @@ final class DatabaseSetup extends Command
         }
     }
 
-    private function prompt(string $label, ?string $default = null, bool $allowEmpty = false): string
+    public function prompt(string $label, ?string $default = null, bool $allowEmpty = false): string
     {
         while (true) {
             $prompt = $label;
@@ -574,7 +518,7 @@ final class DatabaseSetup extends Command
         }
     }
 
-    private function confirm(string $label, bool $default = true): bool
+    public function confirm(string $label, bool $default = true): bool
     {
         $suffix = $default ? 'Y/n' : 'y/N';
 
@@ -639,7 +583,7 @@ final class DatabaseSetup extends Command
         ];
     }
 
-    private function toAbsolutePath(string $path): string
+    public function toAbsolutePath(string $path): string
     {
         if ($path === '') {
             return $this->projectRoot . '/var/database/database.sqlite';
@@ -652,7 +596,7 @@ final class DatabaseSetup extends Command
         return $this->projectRoot . '/' . ltrim($path, '/');
     }
 
-    private function ensureDirectory(string $directory): void
+    public function ensureDirectory(string $directory): void
     {
         if (is_dir($directory)) {
             return;
