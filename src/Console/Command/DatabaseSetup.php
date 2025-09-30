@@ -81,9 +81,6 @@ final class DatabaseSetup extends Command
         $this->writeln($this->stdout, '');
 
         $connectionData = $this->collectConnectionConfiguration();
-        if ($connectionData === null) {
-            return 1;
-        }
 
         $this->writeEnv($connectionData['env']);
         $this->writeDatabaseConfig($connectionData['connectionName'], $connectionData['connection']);
