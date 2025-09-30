@@ -57,7 +57,13 @@ final class DatabaseSetupCommandTest extends TestCase
             'n',
         ]);
         $output = fopen('php://memory', 'w+');
+        if ($output === false) {
+            $this->fail('Unable to create output stream.');
+        }
         $stderr = fopen('php://memory', 'w+');
+        if ($stderr === false) {
+            $this->fail('Unable to create stderr stream.');
+        }
 
         $command = new DatabaseSetup($app, $this->root, $input, $output, $stderr);
 
@@ -97,6 +103,9 @@ final class DatabaseSetupCommandTest extends TestCase
             'n',
         ]);
         $outputSecond = fopen('php://memory', 'w+');
+        if ($outputSecond === false) {
+            $this->fail('Unable to create second output stream.');
+        }
         $commandSecond = new DatabaseSetup($app, $this->root, $inputSecond, $outputSecond, $stderr);
 
         $secondExitCode = $commandSecond->handle([]);
@@ -119,6 +128,9 @@ final class DatabaseSetupCommandTest extends TestCase
     private function inputStream(array $lines)
     {
         $stream = fopen('php://memory', 'w+');
+        if ($stream === false) {
+            $this->fail('Unable to create input stream.');
+        }
         foreach ($lines as $line) {
             fwrite($stream, $line . "\n");
         }
