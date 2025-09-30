@@ -256,9 +256,11 @@ Use this checklist when cutting a release or updating starter documentation:
    renders cards or feature grids on the landing page. Verify `mkdocs serve` and
    `mkdocs build --strict` both succeed locally.
 3. **Static-site deployment** – update Netlify, GitHub Pages, or the chosen host
-   to trigger builds from the default branch. Provide the `pip install -r
-   docs/requirements.txt` step (or inline dependency list) so the build image has
-   MkDocs and theme plugins available.
+   to trigger builds from the default branch. Configure GitHub Pages to publish
+   from the `main` branch so it aligns with the branch filter enforced in
+   `.github/workflows/docs.yml`. Provide the
+   `pip install -r docs/requirements.txt` step (or inline dependency list) so the
+   build image has MkDocs and theme plugins available.
 4. **Automation** – wire smoke tests into CI that execute the `create-project`
    commands using Composer's `--no-interaction` flag. Cache Composer downloads to
    keep pipelines fast and surface template breakage immediately.
