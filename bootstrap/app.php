@@ -3,7 +3,21 @@ use Dotenv\Dotenv;
 use Bamboo\Core\{Application, Config, ConfigValidator, ConfigurationException};
 use Prometheus\Storage\Adapter;
 
-require __DIR__ . '/../vendor/autoload.php';
+$autoloader = __DIR__ . '/../vendor/autoload.php';
+
+if (!is_file($autoloader)) {
+    $message = 'Composer autoloader not found. Run "composer install" from the project root before invoking Bamboo.';
+
+    if (defined('STDERR') && is_resource(STDERR)) {
+        fwrite(STDERR, $message . PHP_EOL);
+    } else {
+        error_log($message);
+    }
+
+    exit(1);
+}
+
+require $autoloader;
 
 $dotenv = Dotenv::createImmutable(dirname(__DIR__));
 $dotenv->safeLoad();

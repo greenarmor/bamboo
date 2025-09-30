@@ -4,6 +4,8 @@
 
 Bamboo's dot-notation console is the operational entry point for every deployment. The sections below describe the current stability guarantees, end-to-end contracts, and the guardrails in place to detect regressions before v1.0 ships.
 
+> **Heads-up when working from source:** Run `composer install` in the repository root before invoking `php bin/bamboo`. The CLI (and web front controller) rely on Composer's autoloader being present.
+
 ## Stability index
 
 ### Command tiers

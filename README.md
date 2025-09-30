@@ -16,6 +16,11 @@ $ php bin/bamboo http.serve
 ```
 Then visit http://127.0.0.1:9501 to view the default application.
 
+### Working from source
+
+Cloning this repository instead of using `composer create-project`? Run `composer install` in the project root before invoking
+the Bamboo CLI or web front controller so that the Composer autoloader is available.
+
 ## Documentation
 - Installation walkthroughs, CLI references, and upgrade notes are published in the [Docs directory](docs/).
 - The latest rendered documentation is available on the [GitHub Pages site](https://greenarmor.github.io/bamboo/).
