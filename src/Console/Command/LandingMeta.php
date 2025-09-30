@@ -11,6 +11,10 @@ class LandingMeta extends Command {
     return 'Generate landing metadata for a given content descriptor';
   }
 
+  public function usage(): string {
+    return 'php bin/bamboo landing.meta [type] [key=value ...]';
+  }
+
   public function handle(array $args): int {
     $descriptor = $this->resolveDescriptor($args);
     $builder = new LandingPageContent($this->app);

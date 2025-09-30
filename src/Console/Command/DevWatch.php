@@ -24,6 +24,11 @@ class DevWatch extends Command
         return 'Restart HTTP on file changes using an internal watcher loop';
     }
 
+    public function usage(): string
+    {
+        return 'php bin/bamboo dev.watch [--debounce=<ms>] [--watch=<paths>] [--command=<cmd>] [-- <cmd...>]';
+    }
+
     public function handle(array $args): int
     {
         if (in_array('--help', $args, true) || in_array('-h', $args, true)) {

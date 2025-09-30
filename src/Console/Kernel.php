@@ -13,19 +13,94 @@ class Kernel {
     PkgInfo::class, ClientCall::class, ConfigValidate::class, AuthJwtSetup::class,
     LandingMeta::class, DatabaseSetup::class
   ];
+
+  /**
+   * @var list<\Bamboo\Console\Command\Command>|null
+   */
+  private ?array $resolvedCommands = null;
+
   public function __construct(protected \Bamboo\Core\Application $app) {}
+
   public function run(array $argv): int {
-    $name = $argv[1] ?? 'help';
-    if ($name === 'help') {
-      echo "Bamboo CLI\nCommands:\n";
-      foreach ($this->commands as $c) { $i = new $c($this->app); echo "  - ".$i->name()."  ".$i->description()."\n"; }
+    $args = array_slice($argv, 1);
+    if ($args === []) {
+      $this->printGeneralHelp();
+
       return 0;
     }
-    foreach ($this->commands as $c) {
-      $i = new $c($this->app);
-      if ($i->matches($name)) return $i->handle(array_slice($argv,2));
+
+    $requested = array_shift($args);
+    if ($requested !== null && $this->isHelpRequest($requested)) {
+      $target = $args[0] ?? null;
+      if ($target !== null) {
+        return $this->printCommandHelp($target);
+      }
+
+      $this->printGeneralHelp();
+
+      return 0;
     }
-    echo "Unknown command: {$name}\n";
+
+    $command = $requested !== null ? $this->findCommand($requested) : null;
+    if ($command !== null) {
+      return $command->handle($args);
+    }
+
+    echo "Unknown command: {$requested}\n";
+    echo "Run 'php bin/bamboo --help' to see available commands.\n";
+
     return 1;
+  }
+
+  private function isHelpRequest(string $value): bool {
+    return in_array($value, ['help', '--help', '-h'], true);
+  }
+
+  private function printGeneralHelp(): void {
+    echo "Bamboo CLI\n";
+    echo "Usage: php bin/bamboo <command> [options]\n\n";
+    echo "Available commands:\n";
+    foreach ($this->instances() as $command) {
+      printf("  %-20s %s\n", $command->name(), $command->description());
+      printf("      Usage: %s\n", $command->usage());
+      echo "\n";
+    }
+  }
+
+  private function printCommandHelp(string $name): int {
+    $command = $this->findCommand($name);
+    if ($command === null) {
+      echo "Unknown command: {$name}\n";
+      echo "Run 'php bin/bamboo --help' to see available commands.\n";
+
+      return 1;
+    }
+
+    echo sprintf("Command: %s\n", $command->name());
+    echo sprintf("Description: %s\n", $command->description());
+    echo sprintf("Usage: %s\n", $command->usage());
+
+    return 0;
+  }
+
+  /**
+   * @return list<\Bamboo\Console\Command\Command>
+   */
+  private function instances(): array {
+    if ($this->resolvedCommands === null) {
+      $this->resolvedCommands = array_map(fn(string $class) => new $class($this->app), $this->commands);
+    }
+
+    return $this->resolvedCommands;
+  }
+
+  private function findCommand(string $name): ?\Bamboo\Console\Command\Command {
+    foreach ($this->instances() as $command) {
+      if ($command->matches($name)) {
+        return $command;
+      }
+    }
+
+    return null;
   }
 }

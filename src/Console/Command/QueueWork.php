@@ -4,6 +4,7 @@ namespace Bamboo\Console\Command;
 class QueueWork extends Command {
   public function name(): string { return 'queue.work'; }
   public function description(): string { return 'Start a Redis-backed worker (BLPOP)'; }
+  public function usage(): string { return 'php bin/bamboo queue.work [--once] [--max-jobs=<count>]'; }
   /**
    * @param list<string> $args
    */

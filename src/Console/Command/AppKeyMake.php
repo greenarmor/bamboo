@@ -4,6 +4,7 @@ namespace Bamboo\Console\Command;
 class AppKeyMake extends Command {
   public function name(): string { return 'app.key.make'; }
   public function description(): string { return 'Generate APP_KEY in .env'; }
+  public function usage(): string { return 'php bin/bamboo app.key.make [--if-missing]'; }
 
   public function handle(array $args): int {
     $root = dirname(__DIR__, 3);
