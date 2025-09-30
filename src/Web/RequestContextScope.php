@@ -67,6 +67,9 @@ class RequestContextScope
         $this->fallbackContext = null;
     }
 
+    /**
+     * @param ArrayAccess<string, mixed> $store
+     */
     private function getFromStore(ArrayAccess $store): ?RequestContext
     {
         if (!$store->offsetExists(self::CONTEXT_KEY)) {
@@ -77,6 +80,9 @@ class RequestContextScope
         return $value instanceof RequestContext ? $value : null;
     }
 
+    /**
+     * @return ArrayAccess<string, mixed>|null
+     */
     private function fetchCoroutineContext(): ?ArrayAccess
     {
         $class = $this->resolveCoroutineClass();
