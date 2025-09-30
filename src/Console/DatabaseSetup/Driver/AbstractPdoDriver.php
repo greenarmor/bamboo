@@ -18,6 +18,7 @@ abstract class AbstractPdoDriver implements DriverInterface
 
     /**
      * @param array<string, string> $env
+     * @param array<string, string> $defaults
      * @return array{host: string, port: string, database: string, username: string, password: string}
      */
     final protected function promptForCredentials(DatabaseSetup $command, array $env, array $defaults): array

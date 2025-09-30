@@ -12,6 +12,7 @@ parameters:
         - tests
     tmpDir: var/cache/phpstan
     bootstrapFiles:
+        - stubs/mongodb.php
         - stubs/openswoole.php
         - vendor/autoload.php
     checkMissingIterableValueType: true
