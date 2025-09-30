@@ -85,6 +85,7 @@ The following sections capture the full contract for every command currently reg
   - Issues a network request; does not mutate application state.
 - **Guardrails:** No automated contract tests yet. Add curl-style fixtures to assert status line formatting before promoting out of Preview.
 
+<a id="database.setup"></a>
 ### `database.setup`
 
 - **Purpose:** Guide developers through configuring database connections, defining tables, and seeding starter data without hand-editing configuration files.

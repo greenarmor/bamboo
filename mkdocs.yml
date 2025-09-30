@@ -19,6 +19,7 @@ nav:
   - CLI:
       - Command Reference: cli/README.md
       - JWT Auth Toolkit: cli/jwt-auth-toolkit.md
+      - Database Setup Wizard: cli/database-setup.md
   - Tasks:
       - Overview: tasks/README.md
       - Config Validation in CI: tasks/config-validation-ci.md
