@@ -6,7 +6,7 @@ namespace Bamboo\Web\Middleware;
 
 use Bamboo\Core\Config;
 use Bamboo\Observability\Metrics\CircuitBreakerMetrics;
-use Bamboo\Web\RequestContext;
+use Bamboo\Web\RequestContextScope;
 use Bamboo\Web\Resilience\CircuitBreakerRegistry;
 use Nyholm\Psr7\Response;
 use Psr\Http\Message\ResponseInterface;
@@ -19,7 +19,7 @@ final class CircuitBreakerMiddleware
 
     public function __construct(
         private Config $config,
-        private RequestContext $context,
+        private RequestContextScope $contextScope,
         private CircuitBreakerRegistry $registry,
         private CircuitBreakerMetrics $metrics,
         ?callable $clock = null,
@@ -29,7 +29,8 @@ final class CircuitBreakerMiddleware
 
     public function handle(Request $request, \Closure $next): ResponseInterface
     {
-        $route = $this->context->get('route', sprintf('%s %s', $request->getMethod(), $request->getUri()->getPath()));
+        $context = $this->contextScope->getOrCreate();
+        $route = $context->get('route', sprintf('%s %s', $request->getMethod(), $request->getUri()->getPath()));
         $method = $request->getMethod();
         $settings = $this->resolveSettings($method, $route, $request);
 

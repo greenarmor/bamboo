@@ -1,15 +1,16 @@
 <?php
 namespace Bamboo\Web\Middleware;
 
-use Bamboo\Web\RequestContext;
+use Bamboo\Web\RequestContextScope;
 use Psr\Http\Message\ServerRequestInterface as Request;
 
 class RequestId {
-  public function __construct(private RequestContext $context) {}
+  public function __construct(private RequestContextScope $contextScope) {}
   public function handle(Request $request, \Closure $next) {
     $requestId = trim($request->getHeaderLine('X-Request-ID'));
     if ($requestId === '') { $requestId = $this->generateUuid(); }
-    $this->context->merge([
+    $context = $this->contextScope->getOrCreate();
+    $context->merge([
       'id' => $requestId,
       'method' => $request->getMethod(),
       'route' => sprintf('%s %s', $request->getMethod(), $request->getRequestTarget()),

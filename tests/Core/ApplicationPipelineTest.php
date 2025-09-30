@@ -9,7 +9,7 @@ use Bamboo\Provider\AppProvider;
 use Bamboo\Provider\MetricsProvider;
 use Bamboo\Provider\ResilienceProvider;
 use Bamboo\Web\Kernel;
-use Bamboo\Web\RequestContext;
+use Bamboo\Web\RequestContextScope;
 use Nyholm\Psr7\Response;
 use Nyholm\Psr7\ServerRequest;
 use PHPUnit\Framework\TestCase;
@@ -350,7 +350,9 @@ class ApplicationPipelineTest extends TestCase {
     $responseOne = $app->handle(new ServerRequest('GET', '/missing-one'));
     $this->assertSame(404, $responseOne->getStatusCode());
 
-    $contextAfterFirst = $app->get(RequestContext::class);
+    $scope = $app->get(RequestContextScope::class);
+    $contextAfterFirst = $scope->get();
+    $this->assertInstanceOf(\Bamboo\Web\RequestContext::class, $contextAfterFirst);
     $this->assertSame('GET /missing-one', $contextAfterFirst->get('route'));
 
     $firstCache = $ref->getValue($kernel);
@@ -359,7 +361,8 @@ class ApplicationPipelineTest extends TestCase {
     $responseTwo = $app->handle(new ServerRequest('GET', '/missing-two'));
     $this->assertSame(404, $responseTwo->getStatusCode());
 
-    $contextAfterSecond = $app->get(RequestContext::class);
+    $contextAfterSecond = $scope->get();
+    $this->assertInstanceOf(\Bamboo\Web\RequestContext::class, $contextAfterSecond);
     $this->assertSame('GET /missing-two', $contextAfterSecond->get('route'));
 
     $secondCache = $ref->getValue($kernel);

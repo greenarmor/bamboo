@@ -4,7 +4,7 @@ namespace Tests\Roadmap\V0_4;
 
 use Bamboo\Observability\Metrics\HttpMetrics;
 use Bamboo\Web\Middleware\TimeoutMiddleware;
-use Bamboo\Web\RequestContext;
+use Bamboo\Web\RequestContextScope;
 use Nyholm\Psr7\Response;
 use Nyholm\Psr7\ServerRequest;
 use PHPUnit\Framework\TestCase;
@@ -25,10 +25,10 @@ class TimeoutMiddlewareTest extends TestCase {
 
     $registry = new CollectorRegistry(new InMemory());
     $metrics = new HttpMetrics($registry, ['namespace' => 'test']);
-    $context = new RequestContext();
-    $context->merge(['route' => 'GET /slow']);
+    $scope = new RequestContextScope();
+    $scope->getOrCreate()->merge(['route' => 'GET /slow']);
 
-    $middleware = new TimeoutMiddleware($config, $context, $metrics);
+    $middleware = new TimeoutMiddleware($config, $scope, $metrics);
     $request = new ServerRequest('GET', '/slow');
 
     $response = $middleware->handle($request, function() {
@@ -58,10 +58,10 @@ class TimeoutMiddlewareTest extends TestCase {
 
     $registry = new CollectorRegistry(new InMemory());
     $metrics = new HttpMetrics($registry, ['namespace' => 'test']);
-    $context = new RequestContext();
-    $context->merge(['route' => 'GET /metrics']);
+    $scope = new RequestContextScope();
+    $scope->getOrCreate()->merge(['route' => 'GET /metrics']);
 
-    $middleware = new TimeoutMiddleware($config, $context, $metrics);
+    $middleware = new TimeoutMiddleware($config, $scope, $metrics);
     $request = new ServerRequest('GET', '/metrics');
 
     $middleware->handle($request, function() {
@@ -99,10 +99,10 @@ class TimeoutMiddlewareTest extends TestCase {
 
     $registry = new CollectorRegistry(new InMemory());
     $metrics = new HttpMetrics($registry, ['namespace' => 'test']);
-    $context = new RequestContext();
-    $context->merge(['route' => 'GET /slow']);
+    $scope = new RequestContextScope();
+    $scope->getOrCreate()->merge(['route' => 'GET /slow']);
 
-    $middleware = new TimeoutMiddleware($config, $context, $metrics);
+    $middleware = new TimeoutMiddleware($config, $scope, $metrics);
     $request = new ServerRequest('GET', '/slow');
 
     $response = $middleware->handle($request, function() {

@@ -6,7 +6,7 @@ namespace Bamboo\Web\Middleware;
 
 use Bamboo\Core\Config;
 use Bamboo\Observability\Metrics\HttpMetrics;
-use Bamboo\Web\RequestContext;
+use Bamboo\Web\RequestContextScope;
 use Nyholm\Psr7\Response;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface as Request;
@@ -15,14 +15,15 @@ final class TimeoutMiddleware
 {
     public function __construct(
         private Config $config,
-        private RequestContext $context,
+        private RequestContextScope $contextScope,
         private HttpMetrics $metrics,
     ) {
     }
 
     public function handle(Request $request, \Closure $next): ResponseInterface
     {
-        $route = $this->context->get('route', sprintf('%s %s', $request->getMethod(), $request->getUri()->getPath()));
+        $context = $this->contextScope->getOrCreate();
+        $route = $context->get('route', sprintf('%s %s', $request->getMethod(), $request->getUri()->getPath()));
         $method = $request->getMethod();
         $threshold = $this->resolveThreshold($method, $route, $request);
 
@@ -36,13 +37,13 @@ final class TimeoutMiddleware
             $response = $next($request);
         } catch (\Throwable $exception) {
             $elapsed = microtime(true) - $start;
-            $this->context->set('timeout.elapsed', $elapsed);
+            $context->set('timeout.elapsed', $elapsed);
             throw $exception;
         }
 
         $elapsed = microtime(true) - $start;
-        $this->context->set('timeout.elapsed', $elapsed);
-        $this->context->set('timeout.threshold', $threshold);
+        $context->set('timeout.elapsed', $elapsed);
+        $context->set('timeout.threshold', $threshold);
 
         if ($elapsed > $threshold) {
             $this->metrics->incrementTimeout($method, $route);

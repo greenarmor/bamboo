@@ -4,6 +4,7 @@ namespace Bamboo\Core;
 use Bamboo\Module\ModuleInterface;
 use Bamboo\Web\Kernel;
 use Bamboo\Web\RequestContext;
+use Bamboo\Web\RequestContextScope;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface as Request;
 
@@ -16,6 +17,7 @@ class Application extends Container {
     $this->singleton(Config::class, fn() => $config);
     $this->singleton('router', fn() => new Router());
     $this->singleton(Kernel::class, fn() => new Kernel($this->get(Config::class)));
+    $this->singleton(RequestContextScope::class, fn() => new RequestContextScope());
     $this->bootRoutes();
   }
   /**
@@ -42,8 +44,7 @@ class Application extends Container {
     $context->merge([
       'method' => $request->getMethod(),
     ]);
-    $this->instances[RequestContext::class] = $context;
-    $this->instances['request.context'] = $context;
+    $this->get(RequestContextScope::class)->set($context);
     $router = $this->get('router');
     $match = $router->match($request);
     $defaultSignature = sprintf('%s %s', $request->getMethod(), $request->getUri()->getPath());

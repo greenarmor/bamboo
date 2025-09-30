@@ -4,7 +4,7 @@ namespace Tests\Roadmap\V0_4;
 
 use Bamboo\Observability\Metrics\CircuitBreakerMetrics;
 use Bamboo\Web\Middleware\CircuitBreakerMiddleware;
-use Bamboo\Web\RequestContext;
+use Bamboo\Web\RequestContextScope;
 use Bamboo\Web\Resilience\CircuitBreakerRegistry;
 use Nyholm\Psr7\Response;
 use Nyholm\Psr7\ServerRequest;
@@ -30,13 +30,13 @@ class CircuitBreakerMiddlewareTest extends TestCase {
 
     $registry = new CircuitBreakerRegistry();
     $metrics = new CircuitBreakerMetrics(new CollectorRegistry(new InMemory()), ['namespace' => 'test']);
-    $context = new RequestContext();
-    $context->merge(['route' => 'GET /unstable']);
+    $scope = new RequestContextScope();
+    $scope->getOrCreate()->merge(['route' => 'GET /unstable']);
 
     $now = 0.0;
     $clock = function() use (&$now): float { return $now; };
 
-    $middleware = new CircuitBreakerMiddleware($config, $context, $registry, $metrics, $clock);
+    $middleware = new CircuitBreakerMiddleware($config, $scope, $registry, $metrics, $clock);
     $request = new ServerRequest('GET', '/unstable');
 
     try {
@@ -86,13 +86,13 @@ class CircuitBreakerMiddlewareTest extends TestCase {
     $collector = new CollectorRegistry(new InMemory());
     $metrics = new CircuitBreakerMetrics($collector, ['namespace' => 'test']);
     $registry = new CircuitBreakerRegistry();
-    $context = new RequestContext();
-    $context->merge(['route' => 'GET /metrics']);
+    $scope = new RequestContextScope();
+    $scope->getOrCreate()->merge(['route' => 'GET /metrics']);
 
     $now = 0.0;
     $clock = function() use (&$now): float { return $now; };
 
-    $middleware = new CircuitBreakerMiddleware($config, $context, $registry, $metrics, $clock);
+    $middleware = new CircuitBreakerMiddleware($config, $scope, $registry, $metrics, $clock);
     $request = new ServerRequest('GET', '/metrics');
 
     try {

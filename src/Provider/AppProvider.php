@@ -2,7 +2,7 @@
 namespace Bamboo\Provider;
 use Bamboo\Core\Application;
 use Bamboo\Web\ProblemDetailsHandler;
-use Bamboo\Web\RequestContext;
+use Bamboo\Web\RequestContextScope;
 use Bamboo\Web\View\Engine\TemplateEngineManager;
 use Monolog\Handler\StreamHandler;
 use Monolog\Level;
@@ -14,15 +14,20 @@ class AppProvider {
       $log = new \Monolog\Logger('bamboo');
       $log->pushHandler(new StreamHandler($app->config('app.log_file'), Level::Debug));
       $log->pushProcessor(function(LogRecord $record) use ($app) {
-        if (!$app->has(RequestContext::class)) {
+        if (!$app->has(RequestContextScope::class)) {
           return $record;
         }
-        $context = $app->get(RequestContext::class)->all();
+        $scope = $app->get(RequestContextScope::class);
+        $context = $scope->get();
         if (!$context) {
           return $record;
         }
+        $values = $context->all();
+        if ($values === []) {
+          return $record;
+        }
         $extra = $record->extra;
-        $extra['request'] = array_merge($extra['request'] ?? [], $context);
+        $extra['request'] = array_merge($extra['request'] ?? [], $values);
         return $record->with(extra: $extra);
       });
       return $log;
