@@ -1,6 +1,14 @@
 #!/usr/bin/env php
 <?php
 
+if (extension_loaded('openswoole') && class_exists('OpenSwoole\\Runtime')) {
+    if (defined('SWOOLE_HOOK_ALL')) {
+        OpenSwoole\Runtime::enableCoroutine(true, SWOOLE_HOOK_ALL);
+    } else {
+        OpenSwoole\Runtime::enableCoroutine(true);
+    }
+}
+
 const BAMBOO_MIN_PHP_VERSION_ID = 80200;
 const BAMBOO_RUNTIME_REDIRECT_ENV = 'BAMBOO_PHP_REDIRECT';
 

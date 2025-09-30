@@ -94,6 +94,13 @@ environment variables `DB_CONNECTION`, `DB_HOST`, `DB_PORT`, `DB_DATABASE`,
 | `default.retries.status_codes` | array<int> | HTTP status codes that trigger a retry. |
 | `services` | array<string, array> | Named services with overrides such as `base_uri` and `timeout`. |
 
+When running under OpenSwoole, ensure coroutine hooks stay enabled before
+bootstrap (for example by calling
+`OpenSwoole\Runtime::enableCoroutine(true, SWOOLE_HOOK_ALL);` in entry
+points) so the bundled HTTP client can yield while waiting on cURL, stream,
+or Redis I/O. Disabling hooks forces requests to block an entire worker and
+removes Bamboo's ability to pipeline concurrent outbound calls.
+
 ### `etc/view.php`
 
 | Key | Type | Default | Notes |

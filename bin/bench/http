@@ -2,6 +2,14 @@
 <?php
 declare(strict_types=1);
 
+if (extension_loaded('openswoole') && class_exists('OpenSwoole\\Runtime')) {
+    if (defined('SWOOLE_HOOK_ALL')) {
+        OpenSwoole\Runtime::enableCoroutine(true, SWOOLE_HOOK_ALL);
+    } else {
+        OpenSwoole\Runtime::enableCoroutine(true);
+    }
+}
+
 if (in_array('--help', $argv, true) || in_array('-h', $argv, true)) {
     echo <<<"TXT"
 Bamboo HTTP benchmark harness

@@ -3,6 +3,15 @@
 use Bamboo\Swoole\ServerInstrumentation;
 use Bamboo\Web\Health\HealthState;
 use OpenSwoole\Exception as OpenSwooleException;
+use OpenSwoole\Runtime;
+
+if (extension_loaded('openswoole') && class_exists(Runtime::class)) {
+  if (defined('SWOOLE_HOOK_ALL')) {
+    Runtime::enableCoroutine(true, SWOOLE_HOOK_ALL);
+  } else {
+    Runtime::enableCoroutine(true);
+  }
+}
 
 $app = require __DIR__ . '/app.php';
 $health = $app->has(HealthState::class) ? $app->get(HealthState::class) : null;
